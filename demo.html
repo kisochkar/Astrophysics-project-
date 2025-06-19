@@ -34,7 +34,7 @@
     <a-scene webxr="optionalAR: true;">
       <a-assets>
         <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
-        <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
+        <a-asset-item id="mercury-model" src="./assets="./assets/models/mercury.glb""></a-asset-item>
         <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
         <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
         <a-asset-item id="moon-model" src="./assets/models/moon.glb"></a-asset-item>
@@ -44,6 +44,8 @@
         <a-asset-item id="uranus-model" src="./assets/models/uranus.glb"></a-asset-item>
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
+
+      <a-camera position="0 2 5" look-controls wasd-controls></a-camera>
 
       <a-entity gltf-model="#sun-model" position="0 0 0" scale="1 1 1"></a-entity>
 
@@ -93,6 +95,7 @@
       <a-light type="ambient" color="#BBB"></a-light>
       <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
 
-      </a-scene>
+      <a-sky color="black"></a-sky>
+    </a-scene>
   </body>
 </html>
