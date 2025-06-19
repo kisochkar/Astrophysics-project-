@@ -34,9 +34,9 @@
     <script>
       const day = 24.0 * 60 * 60; // Секунд в одному дні
       const G = 6.67e-11; // Гравітаційна стала
-      // Збільшимо K до 100 мільярдів метрів на A-Frame одиницю.
-      // Це зробить систему набагато компактнішою в A-Frame просторі.
-      const K = 1e11; // 1 A-Frame одиниця = 100 мільярдів метрів.
+      // Середнє значення K: 50 мільярдів метрів на A-Frame одиницю.
+      // Це зробить систему помірно компактною.
+      const K = 5e10; // 1 A-Frame одиниця = 50 мільярдів метрів.
 
       AFRAME.registerComponent('planet', {
         schema: {
@@ -73,8 +73,8 @@
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          // Зменшуємо крок часу, щоб рух був повільнішим
-          const dt = day / 365; // 1 секунда симуляції = 1/365 дня
+          // Крок часу: 1 секунда симуляції = 1/365 дня
+          const dt = day / 365;
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -130,7 +130,7 @@
     </script>
 
     <a-scene webxr="optionalAR: true;">
-      <a-camera position="0 0 3" look-controls wasd-controls far="100"></a-camera>
+      <a-camera position="0 0 5" look-controls wasd-controls far="100"></a-camera>
 
       <a-assets>
         <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
@@ -145,12 +145,11 @@
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
 
-      <a-entity id="solar-system-container" scale="10 10 10" position="0 0 0">
+      <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
         <a-entity gltf-model="#sun-model"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="1 1 1">
-        </a-entity>
+                  scale="0.5 0.5 0.5"> </a-entity>
 
         <a-entity gltf-model="#mercury-model"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
@@ -166,7 +165,7 @@
                   planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
             <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1"></a-entity>
             <a-entity gltf-model="#moon-model"
-                      position="0.005 0 0" scale="0.02 0.02 0.02"
+                      position="0.003 0 0" scale="0.02 0.02 0.02"
                       animation="property: rotation; to: 0 360 0; loop: true; dur: 2700; easing: linear;"></a-entity>
         </a-entity>
 
