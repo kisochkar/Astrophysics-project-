@@ -71,8 +71,8 @@
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          // Збільшуємо швидкість: 1 секунда симуляції = 1 день
-          const dt = day;
+          // Збільшуємо швидкість ще більше: 1 секунда симуляції = 100 днів
+          const dt = day * 100;
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
