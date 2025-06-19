@@ -7,93 +7,168 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
-      /* A-Frame автоматично додасть кнопку для AR/VR, тому цю можна прибрати, якщо вона дублюється */
-      #ar-button {
-          position: fixed;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 9999;
-          padding: 15px 30px;
-          background: #667eea;
-          color: white;
-          text-decoration: none;
-          border-radius: 25px;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          font-size: 1.2rem;
-          cursor: pointer;
-          border: none;
-          outline: none;
-          transition: background 0.3s ease;
-      }
-      #ar-button:hover {
-          background: #5a67d8;
-      }
     </style>
   </head>
   <body>
-    <a-scene webxr="optionalAR: true;">
+    <script>
+      const day = 24.0 * 60 * 60;
+
+      AFRAME.registerComponent('planet', {
+        schema: {
+          name: {type: 'string', default: ""},
+          dist: {type: 'number', default: 0},
+          mass: {type: 'number', default: 0},
+          T: {type: 'int', default: 0},
+          v: {type: 'array', default: [0,0,0]},
+          a: {type: 'array', default: [0,0,0]},
+          pos: {type: 'array', default: [0,0,0]}
+        },
+
+        init: function () {
+          this.data.T *= day;
+          this.data.pos[0] = this.data.dist;
+
+          this.el.setAttribute('position', `${this.data.dist/1e9} 0 0`);
+
+          if (this.data.T != 0) {
+            this.data.v[1] = 2 * Math.PI * this.data.dist / this.data.T;
+          }
+        }
+      });
+
+      AFRAME.registerComponent('main', {
+        init: function() {
+          this.solar_system = document.querySelectorAll('[planet]');
+        },
+
+        tick: function (time, deltaTime) {
+          const dt = day / 3;
+          const G = 6.67e-11;
+
+          for (var i = 0; i < this.solar_system.length; i++) {
+            let planet_i = this.solar_system[i].getAttribute('planet');
+            planet_i.a = [0, 0, 0];
+
+            for (var j = 0; j < this.solar_system.length; j++) {
+              let planet_j = this.solar_system[j].getAttribute('planet');
+
+              if (i !== j) {
+                let deltapos = [
+                  planet_j.pos[0] - planet_i.pos[0],
+                  planet_j.pos[1] - planet_i.pos[1],
+                  planet_j.pos[2] - planet_i.pos[2]
+                ];
+
+                let r = Math.sqrt(
+                  Math.pow(deltapos[0], 2) +
+                  Math.pow(deltapos[1], 2) +
+                  Math.pow(deltapos[2], 2)
+                );
+
+                if (r < 1e-6) r = 1e-6;
+
+                for (var k = 0; k < 3; k++) {
+                  planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
+                }
+              }
+            }
+
+            for (var k = 0; k < 3; k++) {
+              planet_i.v[k] += planet_i.a[k] * dt;
+            }
+
+            for (var k = 0; k < 3; k++) {
+              planet_i.pos[k] += planet_i.v[k] * dt;
+            }
+
+            this.solar_system[i].setAttribute('position',
+              `${planet_i.pos[0]/1e9} ${planet_i.pos[1]/1e9} ${planet_i.pos[2]/1e9}`
+            );
+          }
+        }
+      });
+    </script>
+
+    <a-scene webxr="optionalFeatures: [hit-test, local-floor];">
       <a-assets>
-        <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
-        <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
-        <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
-        <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
-        <a-asset-item id="moon-model" src="./assets/models/moon.glb"></a-asset-item>
-        <a-asset-item id="mars-model" src="./assets/models/mars.glb"></a-asset-item>
-        <a-asset-item id="jupiter-model" src="./assets/models/jupiter.glb"></a-asset-item>
-        <a-asset-item id="saturn-model" src="./assets/models/saturno.glb"></a-asset-item>
-        <a-asset-item id="uranus-model" src="./assets/models/uranus.glb"></a-asset-item>
-        <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
+        <a-asset-item id="sun-model" src="./assets/models/sun_model/Sun_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="mercury-model" src="./assets/models/mercury_model/Mercury_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="venus-model" src="./assets/models/venus_model/Venus_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="earth-model" src="./assets/models/earth_model/Earth_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="moon-model" src="./assets/models/moon_model/Moon_Collection.glb"></a-asset-item>
+        <a-asset-item id="mars-model" src="./assets/models/mars_model/Mars_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="jupiter-model" src="./assets/models/jupiter_model/Jupiter_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="saturn-model" src="./assets/models/saturn_model/Saturno_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="uranus-model" src="./assets/models/uranus_model/Uranus_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="neptune-model" src="./assets/models/neptune_model/Neptune_fbx_Collection.glb"></a-asset-item>
       </a-assets>
 
-      <a-entity gltf-model="#sun-model" position="0 0 0" scale="1 1 1"></a-entity>
+      <a-camera position="0 0 6000" cursor-visible="true" cursor-scale="2" cursor-color="#0095DD" cursor-opacity="0.5"></a-camera>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity gltf-model="#sun-model"
+                planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
+                scale="100 100 100">
+      </a-entity>
+
+      <a-entity
+                planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 8800; easing: linear;">
-          <a-entity gltf-model="#mercury-model" position="0.5 0 0" scale="0.1 0.1 0.1"></a-entity>
+          <a-entity gltf-model="#mercury-model" position="0 0 0" scale="0.1 0.1 0.1"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 22500; easing: linear;">
-          <a-entity gltf-model="#venus-model" position="1 0 0" scale="0.2 0.2 0.2"></a-entity>
+          <a-entity gltf-model="#venus-model" position="0 0 0" scale="0.2 0.2 0.2"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 36500; easing: linear;">
-          <a-entity gltf-model="#earth-model" position="1.5 0 0" scale="0.25 0.25 0.25">
-            <a-entity gltf-model="#moon-model" position="0.3 0 0" scale="0.2 0.2 0.2"
-                      animation="property: rotation; to: 0 360 0; loop: true; dur: 2700; easing: linear;"></a-entity>
+          <a-entity gltf-model="#earth-model" position="0 0 0" scale="0.25 0.25 0.25">
+            <a-entity gltf-model="#moon-model"
+                      planet="dist: 3.84e8; mass: 7.342e22; T: 27.3; name: Moon"
+                      animation="property: rotation; to: 0 360 0; loop: true; dur: 2700; easing: linear;"
+                      scale="0.05 0.05 0.05"></a-entity>
           </a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 68700; easing: linear;">
-          <a-entity gltf-model="#mars-model" position="2.2 0 0" scale="0.15 0.15 0.15"></a-entity>
+          <a-entity gltf-model="#mars-model" position="0 0 0" scale="0.15 0.15 0.15"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 433000; easing: linear;">
-          <a-entity gltf-model="#jupiter-model" position="4 0 0" scale="0.6 0.6 0.6"></a-entity>
+          <a-entity gltf-model="#jupiter-model" position="0 0 0" scale="0.6 0.6 0.6"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 1075600; easing: linear;">
-          <a-entity gltf-model="#saturn-model" position="6 0 0" scale="0.5 0.5 0.5"></a-entity>
+          <a-entity gltf-model="#saturn-model" position="0 0 0" scale="0.5 0.5 0.5"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 3068700; easing: linear;">
-          <a-entity gltf-model="#uranus-model" position="8 0 0" scale="0.4 0.4 0.4"></a-entity>
+          <a-entity gltf-model="#uranus-model" position="0 0 0" scale="0.4 0.4 0.4"></a-entity>
       </a-entity>
 
-      <a-entity position="0 0 0" rotation="0 0 0"
+      <a-entity
+                planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 6019000; easing: linear;">
-          <a-entity gltf-model="#neptune-model" position="10 0 0" scale="0.4 0.4 0.4"></a-entity>
+          <a-entity gltf-model="#neptune-model" position="0 0 0" scale="0.4 0.4 0.4"></a-entity>
       </a-entity>
+
+      <a-entity main></a-entity>
 
       <a-light type="ambient" color="#BBB"></a-light>
       <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
 
-      </a-scene>
+      <a-sky color="black"></a-sky>
+    </a-scene>
   </body>
 </html>
