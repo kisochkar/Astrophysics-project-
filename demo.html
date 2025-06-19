@@ -71,8 +71,7 @@
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          // Збільшуємо швидкість ще більше: 1 секунда симуляції = 100 днів
-          const dt = day * 100;
+          const dt = day * 50;
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -128,7 +127,7 @@
     </script>
 
     <a-scene webxr="optionalAR: true;">
-      <a-camera position="0 0 5" look-controls wasd-controls far="100"></a-camera>
+      <a-camera position="0 0 0" look-controls wasd-controls far="100"></a-camera>
 
       <a-assets>
         <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
