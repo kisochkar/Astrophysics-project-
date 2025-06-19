@@ -34,9 +34,8 @@
     <script>
       const day = 24.0 * 60 * 60; // Секунд в одному дні
       const G = 6.67e-11; // Гравітаційна стала
-      // Зменшуємо K ще більше, щоб зробити систему візуально дуже великою.
-      // 1 A-Frame одиниця = 100 мільйонів метрів
-      const K = 1e8;
+      // Зменшуємо K ще більше - робимо 1 одиницю A-Frame = 10 мільйонів метрів
+      const K = 1e7; // Це зробить систему ДУЖЕ великою візуально
 
       AFRAME.registerComponent('planet', {
         schema: {
@@ -68,11 +67,17 @@
       AFRAME.registerComponent('main', {
         init: function() {
           this.solar_system = document.querySelectorAll('[planet]');
+          this.simulation_paused = true; // ПОСТАВИМО НА ПАУЗУ НА ПОЧАТКУ
+          setTimeout(() => {
+              this.simulation_paused = false; // Включимо симуляцію через 5 секунд
+              console.log("Simulation started.");
+          }, 5000);
         },
 
         tick: function (time, deltaTime) {
-          // Крок часу: прискорюємо симуляцію ще більше для швидкого тестування
-          const dt = day / 10; // Кожна "гра" секунда = 2.4 години реального часу
+          if (this.simulation_paused) return; // Якщо на паузі, не оновлюємо позиції
+
+          const dt = day / 10; // Швидка симуляція
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -102,7 +107,7 @@
                 Math.pow(deltapos[2], 2)
               );
 
-              if (r < 1e7) r = 1e7; // Зберігаємо мінімальну відстань 1000 км
+              if (r < 1e7) r = 1e7;
 
               for (var k = 0; k < 3; k++) {
                 planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
@@ -128,7 +133,7 @@
     </script>
 
     <a-scene webxr="optionalAR: true;">
-      <a-camera position="0 2 5" look-controls wasd-controls far="1000"></a-camera>
+      <a-camera position="0 2 5" look-controls wasd-controls far="10000"></a-camera>
 
       <a-assets>
         <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
@@ -147,50 +152,50 @@
 
         <a-entity gltf-model="#sun-model"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="5 5 5">
+                  scale="10 10 10">
         </a-entity>
 
         <a-entity gltf-model="#mercury-model"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
-                  scale="0.2 0.2 0.2">
+                  scale="1 1 1">
         </a-entity>
 
         <a-entity gltf-model="#venus-model"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
-                  scale="0.4 0.4 0.4">
+                  scale="1.5 1.5 1.5">
         </a-entity>
 
         <a-entity id="earth-orbit-anchor"
                   planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
-            <a-entity gltf-model="#earth-model" scale="0.5 0.5 0.5"></a-entity>
+            <a-entity gltf-model="#earth-model" scale="1.8 1.8 1.8"></a-entity>
             <a-entity gltf-model="#moon-model"
-                      position="0.05 0 0" scale="0.15 0.15 0.15"
+                      position="0.1 0 0" scale="0.5 0.5 0.5"
                       animation="property: rotation; to: 0 360 0; loop: true; dur: 2700; easing: linear;"></a-entity>
         </a-entity>
 
         <a-entity gltf-model="#mars-model"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
-                  scale="0.3 0.3 0.3">
+                  scale="1 1 1">
         </a-entity>
 
         <a-entity gltf-model="#jupiter-model"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
-                  scale="2 2 2">
+                  scale="5 5 5">
         </a-entity>
 
         <a-entity gltf-model="#saturn-model"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
-                  scale="1.8 1.8 1.8">
+                  scale="4.5 4.5 4.5">
         </a-entity>
 
         <a-entity gltf-model="#uranus-model"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
-                  scale="1.5 1.5 1.5">
+                  scale="3.5 3.5 3.5">
         </a-entity>
 
         <a-entity gltf-model="#neptune-model"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
-                  scale="1.5 1.5 1.5">
+                  scale="3.5 3.5 3.5">
         </a-entity>
 
         <a-entity main></a-entity>
