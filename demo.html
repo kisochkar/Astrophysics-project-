@@ -11,79 +11,89 @@
   </head>
   <body>
     <script>
-      const day = 24.0 * 60 * 60;
+      const day = 24.0 * 60 * 60; 
 
       AFRAME.registerComponent('planet', {
         schema: {
-          name: {type: 'string', default: ""},
-          dist: {type: 'number', default: 0},
-          mass: {type: 'number', default: 0},
-          T: {type: 'int', default: 0},
-          v: {type: 'array', default: [0,0,0]},
-          a: {type: 'array', default: [0,0,0]},
-          pos: {type: 'array', default: [0,0,0]}
+          name: {type: 'string', default: ""}, 
+          dist: {type: 'number', default: 0}, 
+          mass: {type: 'number', default: 0}, 
+          T: {type: 'number', default: 0}, 
+          v: {type: 'array', default: [0,0,0]}, 
+          a: {type: 'array', default: [0,0,0]}, 
+          pos: {type: 'array', default: [0,0,0]} 
         },
 
         init: function () {
-          this.data.T *= day;
-          this.data.pos[0] = this.data.dist;
-
-          this.el.setAttribute('position', `${this.data.dist/1e9} 0 0`);
-
-          if (this.data.T != 0) {
-            this.data.v[1] = 2 * Math.PI * this.data.dist / this.data.T;
+          if (this.data.T > 0) { 
+            this.data.pos[0] = this.data.dist; 
+            this.data.v[1] = (2 * Math.PI * this.data.dist) / (this.data.T * day); 
+          } else {
+            this.data.pos = [0, 0, 0]; 
+            this.data.v = [0, 0, 0];   
           }
+
+          this.el.setAttribute('position', `${this.data.pos[0]/1e9} ${this.data.pos[1]/1e9} ${this.data.pos[2]/1e9}`); 
         }
       });
 
       AFRAME.registerComponent('main', {
         init: function() {
-          this.solar_system = document.querySelectorAll('[planet]');
+          this.solar_system = document.querySelectorAll('[planet]'); 
         },
 
         tick: function (time, deltaTime) {
-          const dt = day / 3;
-          const G = 6.67e-11;
+          const dt = day / (24 * 10); 
+          const G = 6.67e-11; 
 
           for (var i = 0; i < this.solar_system.length; i++) {
-            let planet_i = this.solar_system[i].getAttribute('planet');
-            planet_i.a = [0, 0, 0];
+            let planet_i_el = this.solar_system[i]; 
+            let planet_i = planet_i_el.getAttribute('planet'); 
+            
+            if (!planet_i) continue; 
+
+            planet_i.a = [0, 0, 0]; 
 
             for (var j = 0; j < this.solar_system.length; j++) {
-              let planet_j = this.solar_system[j].getAttribute('planet');
+              if (i === j) continue; 
 
-              if (i !== j) {
-                let deltapos = [
-                  planet_j.pos[0] - planet_i.pos[0],
-                  planet_j.pos[1] - planet_i.pos[1],
-                  planet_j.pos[2] - planet_i.pos[2]
-                ];
+              let planet_j_el = this.solar_system[j]; 
+              let planet_j = planet_j_el.getAttribute('planet'); 
 
-                let r = Math.sqrt(
-                  Math.pow(deltapos[0], 2) +
-                  Math.pow(deltapos[1], 2) +
-                  Math.pow(deltapos[2], 2)
-                );
+              if (!planet_j) continue; 
 
-                if (r < 1e-6) r = 1e-6;
+              let deltapos = [
+                planet_j.pos[0] - planet_i.pos[0],
+                planet_j.pos[1] - planet_i.pos[1],
+                planet_j.pos[2] - planet_i.pos[2]
+              ]; 
 
-                for (var k = 0; k < 3; k++) {
-                  planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
-                }
+              let r = Math.sqrt(
+                Math.pow(deltapos[0], 2) +
+                Math.pow(deltapos[1], 2) +
+                Math.pow(deltapos[2], 2)
+              ); 
+
+              if (r < 1e5) r = 1e5; 
+
+              for (var k = 0; k < 3; k++) {
+                planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3); 
               }
             }
 
             for (var k = 0; k < 3; k++) {
-              planet_i.v[k] += planet_i.a[k] * dt;
+              planet_i.v[k] += planet_i.a[k] * dt; 
             }
 
             for (var k = 0; k < 3; k++) {
-              planet_i.pos[k] += planet_i.v[k] * dt;
+              planet_i.pos[k] += planet_i.v[k] * dt; 
             }
 
             this.solar_system[i].setAttribute('position',
               `${planet_i.pos[0]/1e9} ${planet_i.pos[1]/1e9} ${planet_i.pos[2]/1e9}`
             );
+            
+            planet_i_el.setAttribute('planet', planet_i); 
           }
         }
       });
