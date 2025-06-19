@@ -32,32 +32,30 @@
   </head>
   <body>
     <script>
-      const day = 24.0 * 60 * 60; // Секунд в одному дні
-      const G = 6.67e-11; // Гравітаційна стала
-      const K = 5e10; // 1 A-Frame одиниця = 50 мільярдів метрів.
+      const day = 24.0 * 60 * 60;
+      const G = 6.67e-11;
+      const K = 5e10;
 
       AFRAME.registerComponent('planet', {
         schema: {
           name: {type: 'string', default: ""},
-          dist: {type: 'number', default: 0}, // Початкова відстань від центральної точки (Сонця) в метрах
+          dist: {type: 'number', default: 0},
           mass: {type: 'number', default: 0},
-          T: {type: 'number', default: 0}, // Період обертання в днях (для розрахунку початкової швидкості)
-          v: {type: 'array', default: [0,0,0]}, // Вектор швидкості [м/с]
-          a: {type: 'array', default: [0,0,0]}, // Вектор прискорення [м/с^2]
-          pos: {type: 'array', default: [0,0,0]} // Вектор позиції [м]
+          T: {type: 'number', default: 0},
+          v: {type: 'array', default: [0,0,0]},
+          a: {type: 'array', default: [0,0,0]},
+          pos: {type: 'array', default: [0,0,0]}
         },
 
         init: function () {
           if (this.data.T > 0) {
-            this.data.pos[0] = this.data.dist; // Початкова позиція по X
-            const centralMass = 1.989e30; // Маса Сонця
+            this.data.pos[0] = this.data.dist;
+            const centralMass = 1.989e30;
             this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
           } else {
             this.data.pos = [0, 0, 0];
             this.data.v = [0, 0, 0];
           }
-          console.log(`${this.data.name} initial position (m):`, this.data.pos);
-          console.log(`${this.data.name} initial position (A-Frame units):`, this.data.pos[0]/K, this.data.pos[1]/K, this.data.pos[2]/K);
           this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
         }
       });
@@ -71,7 +69,7 @@
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          const dt = day * 1;
+          const dt = day * 0.1; // Зменшена швидкість
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
