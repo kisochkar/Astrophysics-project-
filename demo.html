@@ -33,13 +33,15 @@
   <body>
     <script>
       const day = 24.0 * 60 * 60; // Секунд в одному дні
+      const G = 6.67e-11; // Гравітаційна стала
+      const K = 1e9; // Коефіцієнт масштабування для візуалізації (1 A-Frame одиниця = 1 мільярд метрів)
 
       AFRAME.registerComponent('planet', {
         schema: {
           name: {type: 'string', default: ""},
           dist: {type: 'number', default: 0}, // Початкова відстань від центральної точки (Сонця) в метрах
           mass: {type: 'number', default: 0},
-          T: {type: 'number', default: 0}, // Період обертання в днях
+          T: {type: 'number', default: 0}, // Період обертання в днях (для розрахунку початкової швидкості)
           v: {type: 'array', default: [0,0,0]}, // Вектор швидкості [м/с]
           a: {type: 'array', default: [0,0,0]}, // Вектор прискорення [м/с^2]
           pos: {type: 'array', default: [0,0,0]} // Вектор позиції [м]
@@ -49,19 +51,17 @@
           // Ініціалізація позиції та швидкості на основі dist та T
           if (this.data.T > 0) {
             this.data.pos[0] = this.data.dist; // Початкова позиція по X
-            // Обчислення початкової швидкості для кругової орбіти
-            // NOTE: Це спрощення, оскільки розраховується як кругова орбіта навколо центральної маси.
-            // Для більш точної симуляції N-тіл, початкові швидкості мають бути задані відповідно.
-            const centralMass = 1.989e30; // Маса Сонця для розрахунку початкової швидкості
-            this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
+            // Обчислення початкової швидкості для кругової орбіти навколо Сонця
+            const centralMass = 1.989e30; // Маса Сонця
+            this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist); // v = sqrt(GM/r)
           } else {
-            // Для Сонця або центрального об'єкта
+            // Для Сонця (центральний об'єкт)
             this.data.pos = [0, 0, 0];
             this.data.v = [0, 0, 0];
           }
 
-          // Позиція встановлюється в A-Frame одиницях (1e9 метрів = 1 A-Frame одиниця)
-          this.el.setAttribute('position', `${this.data.pos[0]/1e9} ${this.data.pos[1]/1e9} ${this.data.pos[2]/1e9}`);
+          // Встановлення початкової візуальної позиції (ділимо на K для масштабування метрів до A-Frame одиниць)
+          this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
         }
       });
 
@@ -72,7 +72,6 @@
 
         tick: function (time, deltaTime) {
           const dt = day / (24 * 60); // Крок часу для симуляції (1 "ігровий" крок = 1/1440 частина земного дня)
-          const G = 6.67e-11; // Гравітаційна стала
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -104,7 +103,7 @@
                 Math.pow(deltapos[2], 2)
               );
 
-              if (r < 1e6) r = 1e6; // Запобігаємо діленню на нуль або дуже малі значення (збільшено мінімальний r)
+              if (r < 1e7) r = 1e7; // Запобігаємо діленню на нуль або дуже малі значення (збільшено мінімальний r для стабільності)
 
               // Обчислення гравітаційного прискорення (a = GM/r^2 * (deltapos/r))
               for (var k = 0; k < 3; k++) {
@@ -122,9 +121,9 @@
               planet_i.pos[k] += planet_i.v[k] * dt;
             }
 
-            // Оновлення візуальної позиції в A-Frame сцені (ділимо на 1e9)
+            // Оновлення візуальної позиції в A-Frame сцені (ділимо на K)
             this.solar_system[i].setAttribute('position',
-              `${planet_i.pos[0]/1e9} ${planet_i.pos[1]/1e9} ${planet_i.pos[2]/1e9}`
+              `${planet_i.pos[0]/K} ${planet_i.pos[1]/K} ${planet_i.pos[2]/K}`
             );
 
             // Оновлення даних компонента 'planet'
@@ -148,50 +147,55 @@
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera position="0 2 10" look-controls wasd-controls></a-camera>
+      <a-camera position="0 2 5" look-controls wasd-controls></a-camera>
 
-      <a-entity id="solar-system-container" scale="0.01 0.01 0.01" position="0 0 0">
+      <a-entity id="solar-system-container" scale="0.05 0.05 0.05" position="0 0 0">
 
         <a-entity gltf-model="#sun-model"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="100 100 100"> </a-entity>
+                  scale="20 20 20"> </a-entity>
 
         <a-entity gltf-model="#mercury-model"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
-                  scale="5 5 5"> </a-entity>
+                  scale="0.8 0.8 0.8">
+        </a-entity>
 
         <a-entity gltf-model="#venus-model"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
-                  scale="8 8 8"> </a-entity>
+                  scale="1.5 1.5 1.5">
+        </a-entity>
 
-        <a-entity gltf-model="#earth-model"
-                  planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth"
-                  scale="10 10 10"> </a-entity>
-
-        <a-entity gltf-model="#moon-model"
-                  planet="dist: 0.384e9; mass: 7.342e22; T: 27.3; name: Moon"
-                  scale="2 2 2" position="0.1 0 0"> </a-entity>
-
+        <a-entity id="earth-orbit-anchor"
+                  planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
+            <a-entity gltf-model="#earth-model" scale="2 2 2"></a-entity> <a-entity gltf-model="#moon-model"
+                      position="0.1 0 0" scale="0.5 0.5 0.5"
+                      animation="property: rotation; to: 0 360 0; loop: true; dur: 2700; easing: linear;"></a-entity>
+        </a-entity>
 
         <a-entity gltf-model="#mars-model"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
-                  scale="6 6 6"> </a-entity>
+                  scale="1 1 1">
+        </a-entity>
 
         <a-entity gltf-model="#jupiter-model"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
-                  scale="20 20 20"> </a-entity>
+                  scale="5 5 5">
+        </a-entity>
 
         <a-entity gltf-model="#saturn-model"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
-                  scale="18 18 18"> </a-entity>
+                  scale="4 4 4">
+        </a-entity>
 
         <a-entity gltf-model="#uranus-model"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
-                  scale="15 15 15"> </a-entity>
+                  scale="3 3 3">
+        </a-entity>
 
         <a-entity gltf-model="#neptune-model"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
-                  scale="15 15 15"> </a-entity>
+                  scale="3 3 3">
+        </a-entity>
 
         <a-entity main></a-entity> </a-entity> <a-light type="ambient" color="#BBB"></a-light>
       <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
