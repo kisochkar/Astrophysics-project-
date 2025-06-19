@@ -7,6 +7,7 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
+      /* A-Frame автоматично додасть кнопку для AR/VR, тому цю можна прибрати, якщо вона дублюється */
       #ar-button {
           position: fixed;
           bottom: 20px;
@@ -33,16 +34,16 @@
   <body>
     <a-scene webxr="optionalAR: true;">
       <a-assets>
-        <a-asset-item id="sun-model" src="./assets/models/Sun_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="mercury-model" src="./assets/models/Mercury_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="venus-model" src="./assets/models/Venus_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="earth-model" src="./assets/models/Earth_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="moon-model" src="./assets/models/Moon_Collection.glb"></a-asset-item>
-        <a-asset-item id="mars-model" src="./assets/models/Mars_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="jupiter-model" src="./assets/models/Jupiter_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="saturn-model" src="./assets/models/Saturno_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="uranus-model" src="./assets/models/Uranus_fbx_Collection.glb"></a-asset-item>
-        <a-asset-item id="neptune-model" src="./assets/models/Neptune_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="sun-model" src="./assets/models/sun_model/Sun_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="mercury-model" src="./assets/models/mercury_model/Mercury_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="venus-model" src="./assets/models/venus_model/Venus_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="earth-model" src="./assets/models/earth_model/Earth_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="moon-model" src="./assets/models/moon_model/Moon_Collection.glb"></a-asset-item>
+        <a-asset-item id="mars-model" src="./assets/models/mars_model/Mars_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="jupiter-model" src="./assets/models/jupiter_model/Jupiter_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="saturn-model" src="./assets/models/saturn_model/Saturno_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="uranus-model" src="./assets/models/uranus_model/Uranus_fbx_Collection.glb"></a-asset-item>
+        <a-asset-item id="neptune-model" src="./assets/models/neptune_model/Neptune_fbx_Collection.glb"></a-asset-item>
       </a-assets>
 
       <a-entity gltf-model="#sun-model" position="0 0 0" scale="1 1 1"></a-entity>
