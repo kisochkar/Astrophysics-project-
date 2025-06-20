@@ -123,6 +123,7 @@
         }
       });
 
+      // КОМПОНЕНТ ЕВОЛЮЦІЇ ЗІРОК ПОВЕРНУТО
       AFRAME.registerComponent('star-evolution-effect', {
         schema: {
           evolutionSpeed: {type: 'number', default: 0.0001},
@@ -173,7 +174,7 @@
         }
       });
 
-
+      // ФУНКЦІЮ ГЕНЕРАЦІЇ ФОНОВИХ ЗІРОК ПОВЕРНУТО
       function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
         const scene = document.querySelector('a-scene');
         if (!scene) {
@@ -218,7 +219,8 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            generateBackgroundStars(500, 200, 50, 0.01, true);
+            // ВИКЛИК ФУНКЦІЇ ГЕНЕРАЦІЇ ЗІРОК ПОВЕРНУТО
+            generateBackgroundStars(500, 200, 50, 0.01, true); 
           });
         }
       });
