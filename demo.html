@@ -187,7 +187,7 @@
 
         for (let i = 0; i < numStars; i++) {
           const star = document.createElement('a-sphere');
-          const currentStarSize = starBaseSize * (0.5 + Math.random()); // Повернуто до оригінального множника
+          const currentStarSize = starBaseSize * (0.5 + Math.random());
           star.setAttribute('radius', currentStarSize);
           star.setAttribute('color', '#FFFFFF');
           star.setAttribute('material', 'shader: flat; emissive: #FFFFFF; emissiveIntensity: 0.5;');
@@ -218,7 +218,7 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            // Повністю вимкнено генерацію фонових зірок для діагностики
+            // Повністю вимкнено генерацію фонових зірок
             // generateBackgroundStars(500, 200, 70, 0.01, false); 
           });
         }
@@ -242,60 +242,6 @@
       </a-assets>
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
-
-        <a-entity gltf-model="#mercury-model"
-                  planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
-                  scale="0.05 0.05 0.05">
-        </a-entity>
-
-        <a-entity gltf-model="#venus-model"
-                  planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
-                  scale="0.08 0.08 0.08">
-        </a-entity>
-
-        <a-entity id="earth-orbit-anchor"
-                  planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
-            <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1">
-                <a-entity id="moon-orbit"
-                          animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
-                    <a-entity gltf-model="#moon-model"
-                              position="0.05 0 0" scale="0.1 0.1 0.1">
-                        <a-animation attribute="rotation"
-                                     from="0 0 0"
-                                     to="0 360 0"
-                                     dur="2700"
-                                     easing="linear"
-                                     repeat="indefinite">
-                        </a-animation>
-                    </a-entity>
-                </a-entity>
-            </a-entity>
-        </a-entity>
-
-        <a-entity gltf-model="#mars-model"
-                  planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
-                  scale="0.06 0.06 0.06">
-        </a-entity>
-
-        <a-entity gltf-model="#jupiter-model"
-                  planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
-
-        <a-entity gltf-model="#saturn-model"
-                  planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
-                  scale="0.4 0.4 0.4">
-        </a-entity>
-
-        <a-entity gltf-model="#uranus-model"
-                  planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
-
-        <a-entity gltf-model="#neptune-model"
-                  planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
 
         <a-entity main></a-entity>
 
