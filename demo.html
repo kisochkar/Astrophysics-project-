@@ -82,6 +82,13 @@
                   console.log(`Симуляція ${this.simulation_paused ? 'призупинена' : 'відновлена'}.`);
               }
           });
+
+          // **********************************************
+          // ЗМІНА ТУТ: Виклик generateBackgroundStars при ініціалізації main компонента
+          // Це гарантує, що зірки будуть згенеровані, коли сцена буде готова.
+          generateBackgroundStars(500, 50, 10, 0.2, true);
+          console.log("Запустили генерацію фонових зірок.");
+          // **********************************************
         },
 
         tick: function (time, deltaTime) {
@@ -378,9 +385,17 @@
           return;
         }
 
-        const starsContainer = document.createElement('a-entity');
-        starsContainer.setAttribute('id', 'background-stars');
-        scene.appendChild(starsContainer);
+        let starsContainer = document.querySelector('#background-stars');
+        if (!starsContainer) {
+            starsContainer = document.createElement('a-entity');
+            starsContainer.setAttribute('id', 'background-stars');
+            scene.appendChild(starsContainer);
+        } else {
+            // Очищаємо контейнер, якщо він вже існує, щоб уникнути дублювання при повторному виклику
+            while (starsContainer.firstChild) {
+                starsContainer.removeChild(starsContainer.firstChild);
+            }
+        }
 
         const spectralTypes = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
         const spectralTypeDistribution = {
@@ -406,7 +421,8 @@
             const starId = `star-${generateUUID()}`; 
             star.setAttribute('id', starId);
 
-            const currentStarSize = starBaseSize * (0.5 + Math.random());
+            // Збільшимо базовий розмір для кращої видимості, якщо зірок не було видно
+            const currentStarSize = starBaseSize * (0.5 + Math.random() * 2); // Збільшено діапазон розміру
             
             star.setAttribute('radius', currentStarSize);
             star.setAttribute('color', '#FFFFFF'); 
@@ -439,8 +455,11 @@
              console.error("Помилка при генерації фонової зірки:", e);
           }
         }
+        console.log(`Згенеровано ${numStars} фонових зірок.`);
       }
 
+      // Цей блок тепер не потрібен, оскільки generateBackgroundStars викликається в main компоненті
+      /*
       document.addEventListener('DOMContentLoaded', function() {
         const scene = document.querySelector('a-scene');
         if (scene) {
@@ -449,6 +468,7 @@
           });
         }
       });
+      */
     </script>
 
     <a-scene webxr="optionalFeatures: [ar-hit-test];">
