@@ -126,9 +126,9 @@
 
       AFRAME.registerComponent('star-evolution-effect', {
         schema: {
-          evolutionSpeed: {type: 'number', default: 0.0001},
+          evolutionSpeed: {type: 'number', default: 0.0005},
           initialPhase: {type: 'string', default: 'mainSequence'},
-          originalRadius: {type: 'number', default: 0.01}
+          originalRadius: {type: 'number', default: 0.2}
         },
 
         init: function() {
@@ -144,8 +144,10 @@
           ];
 
           this.currentPhaseIndex = 0;
-          this.currentPhaseStartTime = this.evolutionTime;
-          this.updateStarVisuals(this.evolutionPhases[0]);
+          this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
+
+          this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
+          console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} ініціалізована. Початкова фаза: ${this.evolutionPhases[this.currentPhaseIndex].name}`);
         },
 
         tick: function(time, deltaTime) {
@@ -163,29 +165,31 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+            console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} переходить до фази: ${currentPhase.name}. Час: ${this.evolutionTime.toFixed(0)}`);
           }
 
           this.updateStarVisuals(currentPhase);
         },
 
         updateStarVisuals: function(phase) {
-          this.star.setAttribute('radius', this.initialRadius * phase.scaleFactor);
-          this.star.setAttribute('material', `shader: standard; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
+          const newRadius = this.initialRadius * phase.scaleFactor;
+          const newColor = phase.color;
+          const emissiveIntensity = (phase.name === 'supernova') ? 1.5 : 0.8;
+
+          this.star.setAttribute('radius', newRadius);
+          this.star.setAttribute('material', `shader: standard; emissive: ${newColor}; emissiveIntensity: ${emissiveIntensity};`);
         }
       });
 
-      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
-        // console.log('Початок генерації фонових зірок. numStars:', numStars);
+      function generateBackgroundStars(numStars = 500, maxDistance = 50, minDistance = 10, starBaseSize = 0.2, evolveStars = true) {
         const scene = document.querySelector('a-scene');
         if (!scene) {
-          // console.error('A-Frame scene not found.');
           return;
         }
 
         const starsContainer = document.createElement('a-entity');
         starsContainer.setAttribute('id', 'background-stars');
         scene.appendChild(starsContainer);
-        // console.log('Контейнер для зірок додано до сцени:', starsContainer);
 
         for (let i = 0; i < numStars; i++) {
           try {
@@ -194,7 +198,7 @@
             
             star.setAttribute('radius', currentStarSize);
             star.setAttribute('color', '#FFFFFF');
-            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 0.5;');
+            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 1.0;'); 
 
             let x, y, z;
             let distance;
@@ -209,7 +213,7 @@
             
             if (evolveStars) {
               star.setAttribute('star-evolution-effect', {
-                  evolutionSpeed: 0.0001 * (0.5 + Math.random()),
+                  evolutionSpeed: 0.0005 * (0.5 + Math.random()),
                   originalRadius: currentStarSize
               });
             }
@@ -217,25 +221,35 @@
             starsContainer.appendChild(star);
 
           } catch (e) {
-            // console.error(`Помилка при створенні зірки №${i}:`, e);
             break;
           }
         }
-        // console.log(`Генерація зірок завершена (або перервана). Очікувалося ${numStars} зірок.`);
       }
 
       document.addEventListener('DOMContentLoaded', function() {
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            // console.log('Сцена A-Frame завантажена. Спроба генерації зірок...');
-            generateBackgroundStars(500, 200, 50, 0.01, true); 
+            generateBackgroundStars(500, 50, 10, 0.2, true);
+            
+            setTimeout(() => {
+                const stars = document.querySelectorAll('#background-stars a-sphere');
+                console.log(`Знайдено ${stars.length} зірок у DOM:`);
+                stars.forEach((star, index) => {
+                    if (star.hasAttribute('star-evolution-effect')) {
+                        const effectData = star.getAttribute('star-evolution-effect');
+                        console.log(`Зірка ${index}: Має star-evolution-effect. OriginalRadius: ${effectData.originalRadius}, EvolutionSpeed: ${effectData.evolutionSpeed}`);
+                    } else {
+                        console.log(`Зірка ${index}: НЕ МАЄ star-evolution-effect.`);
+                    }
+                });
+            }, 3000);
           });
         }
       });
     </script>
 
-    <a-scene webxr="optionalAR: true;">
+    <a-scene webxr="optionalFeatures: [ar-hit-test];">
       <a-camera position="0 0 5" look-controls wasd-controls far="1000"></a-camera>
 
       <a-assets>
