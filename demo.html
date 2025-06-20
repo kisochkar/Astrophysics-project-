@@ -218,7 +218,8 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            generateBackgroundStars(500, 200, 50, 0.01, true);
+            // Змінено evolveStars на false для діагностики білого об'єкта
+            generateBackgroundStars(500, 200, 50, 0.01, false); 
           });
         }
       });
