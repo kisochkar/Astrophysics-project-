@@ -83,12 +83,9 @@
               }
           });
 
-          // **********************************************
-          // ЗМІНА ТУТ: Виклик generateBackgroundStars при ініціалізації main компонента
-          // Це гарантує, що зірки будуть згенеровані, коли сцена буде готова.
+          // Виклик generateBackgroundStars при ініціалізації main компонента
           generateBackgroundStars(500, 50, 10, 0.2, true);
           console.log("Запустили генерацію фонових зірок.");
-          // **********************************************
         },
 
         tick: function (time, deltaTime) {
@@ -271,7 +268,7 @@
       });
 
 
-      // Компонент інформаційної панелі
+      // Компонент інформаційної панелі (залишається прихованою)
       AFRAME.registerComponent('info-panel', {
         schema: {
             targetType: {type: 'string', default: 'star'}, 
@@ -296,7 +293,6 @@
           } else {
               // Встановлюємо, що панель невидима за замовчуванням
               this.el.setAttribute('visible', 'false'); 
-              // this.updatePanel(); // Не викликаємо, щоб не оновлювати приховану панель
           }
         },
 
@@ -345,6 +341,7 @@
 
                     if (planetData.type === 'star') {
                         typeValue = "Тип: Зірка";
+                        // Використовуємо spectralType з даних планети
                         if (planetData.spectralType) { 
                             classificationValue = `Спектральний тип: ${planetData.spectralType}`;
                         } else {
@@ -352,6 +349,8 @@
                         }
                     } else {
                         typeValue = "Тип: Планета"; 
+                        // Для планет можна додати інші деталі, якщо потрібно
+                        classificationValue = `Відстань: ${planetData.dist.toExponential(2)} м`; 
                     }
 
                     this.nameText.setAttribute('value', `Назва: ${planetData.name}`);
@@ -397,21 +396,36 @@
             }
         }
 
-        const spectralTypes = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
+        // Класифікація зірок за спектрами (Гарвардська система)
+        // Об'єкт, що містить спектральні типи та їх відповідні кольори та приблизні температури
+        const spectralClasses = {
+            'O': { color: '#9BB2FF', tempMin: 30000, tempMax: 60000, description: 'Сині зорі (найгарячіші)' },
+            'B': { color: '#AABFFF', tempMin: 10000, tempMax: 30000, description: 'Синьо-білі зорі' },
+            'A': { color: '#CAD7FF', tempMin: 7500, tempMax: 10000, description: 'Білі зорі' },
+            'F': { color: '#F8F7FF', tempMin: 6000, tempMax: 7500, description: 'Жовто-білі зорі' },
+            'G': { color: '#FFF8EA', tempMin: 5200, tempMax: 6000, description: 'Жовті зорі (наше Сонце)' },
+            'K': { color: '#FFD7A1', tempMin: 3700, tempMax: 5200, description: 'Помаранчеві зорі' },
+            'M': { color: '#FFB36A', tempMin: 2400, tempMax: 3700, description: 'Червоні зорі (найхолодніші)' }
+        };
+
+        const spectralTypeKeys = Object.keys(spectralClasses);
+
+        // Розподіл спектральних типів (орієнтовні відсотки для випадкової генерації)
+        // Це дозволить генерувати більш реалістичний розподіл (M-зірок багато, O-зірок дуже мало)
         const spectralTypeDistribution = {
-            'O': 0.000003, 'B': 0.13, 'A': 0.6, 'F': 3, 'G': 7.6, 'K': 12, 'M': 76
+            'O': 0.000003, 'B': 0.13, 'A': 0.6, 'F': 3, 'G': 7.6, 'K': 12.1, 'M': 76.5
         };
 
         function getRandomSpectralType() {
             let rand = Math.random() * 100;
             let cumulative = 0;
-            for (let type of spectralTypes) {
+            for (let type of spectralTypeKeys) {
                 cumulative += spectralTypeDistribution[type];
                 if (rand <= cumulative) {
                     return type;
                 }
             }
-            return 'M'; 
+            return 'M'; // Fallback
         }
 
 
@@ -421,12 +435,28 @@
             const starId = `star-${generateUUID()}`; 
             star.setAttribute('id', starId);
 
-            // Збільшимо базовий розмір для кращої видимості, якщо зірок не було видно
-            const currentStarSize = starBaseSize * (0.5 + Math.random() * 2); // Збільшено діапазон розміру
+            const randomSpectralClassKey = getRandomSpectralType();
+            const selectedSpectralClass = spectralClasses[randomSpectralClassKey];
+            
+            // Змінюємо розмір зірки та її колір відповідно до спектрального типу
+            // Гарячіші зірки (O, B) більші, холодніші (M, K) менші в середньому
+            let sizeMultiplier = 1.0;
+            let massMultiplier = 1.0; 
+            switch(randomSpectralClassKey) {
+                case 'O': sizeMultiplier = 2.5 + Math.random(); massMultiplier = 20 + Math.random() * 20; break;
+                case 'B': sizeMultiplier = 1.8 + Math.random() * 0.7; massMultiplier = 5 + Math.random() * 15; break;
+                case 'A': sizeMultiplier = 1.3 + Math.random() * 0.5; massMultiplier = 2 + Math.random() * 3; break;
+                case 'F': sizeMultiplier = 1.0 + Math.random() * 0.3; massMultiplier = 1.2 + Math.random() * 0.8; break;
+                case 'G': sizeMultiplier = 0.9 + Math.random() * 0.2; massMultiplier = 0.8 + Math.random() * 0.4; break; // Наше Сонце - G2V
+                case 'K': sizeMultiplier = 0.6 + Math.random() * 0.3; massMultiplier = 0.5 + Math.random() * 0.3; break;
+                case 'M': sizeMultiplier = 0.3 + Math.random() * 0.3; massMultiplier = 0.1 + Math.random() * 0.4; break;
+            }
+
+            const currentStarSize = starBaseSize * sizeMultiplier * (0.5 + Math.random());
             
             star.setAttribute('radius', currentStarSize);
-            star.setAttribute('color', '#FFFFFF'); 
-            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 1.0;'); 
+            star.setAttribute('color', selectedSpectralClass.color); 
+            star.setAttribute('material', `shader: standard; emissive: ${selectedSpectralClass.color}; emissiveIntensity: 1.0;`); 
 
             let x, y, z;
             let distance;
@@ -446,8 +476,8 @@
               });
             }
 
-            const starSpectralType = getRandomSpectralType(); 
-            star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: ${1.989e30 * (0.5 + Math.random() * 2)}; dist: ${distance}; spectralType: ${starSpectralType}`); 
+            // Призначаємо спектральний тип зірці через компонент planet
+            star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: ${1.989e30 * massMultiplier}; dist: ${distance}; spectralType: ${randomSpectralClassKey}`); 
 
             starsContainer.appendChild(star);
 
@@ -465,6 +495,19 @@
         if (scene) {
           scene.addEventListener('loaded', function() {
             generateBackgroundStars(500, 50, 10, 0.2, true);
+            
+            setTimeout(() => {
+                const stars = document.querySelectorAll('#background-stars a-sphere');
+                console.log(`Знайдено ${stars.length} зірок у DOM:`);
+                stars.forEach((star, index) => {
+                    if (star.hasAttribute('star-evolution-effect')) {
+                        const effectData = star.getAttribute('star-evolution-effect');
+                        console.log(`Зірка ${index}: Має star-evolution-effect. OriginalRadius: ${effectData.originalRadius}, EvolutionSpeed: ${effectData.evolutionSpeed}`);
+                    } else {
+                        console.log(`Зірка ${index}: НЕ МАЄ star-evolution-effect.`);
+                    }
+                });
+            }, 3000);
           });
         }
       });
