@@ -227,7 +227,7 @@
           this.updatePosition = this.updatePosition.bind(this);
           // Приєднуємо елемент до об'єкта 3D камери
           this.cameraEl.object3D.add(this.el.object3D); 
-          this.el.setAttribute('visible', 'true');
+          this.el.setAttribute('visible', 'false'); // За замовчуванням приховано
           this.updatePosition();
         },
         updatePosition: function() {
@@ -287,13 +287,16 @@
               this.el.setAttribute('visible', 'false'); 
               console.warn("Info panel elements not found. Panel will remain hidden.");
           } else {
-              // Панель буде прихована за замовчуванням в HTML, тому не встановлюємо тут visible.
-              // this.el.setAttribute('visible', 'true'); 
-              this.updatePanel(); 
+              // Встановлюємо, що панель невидима за замовчуванням
+              this.el.setAttribute('visible', 'false'); 
+              // this.updatePanel(); // Не викликаємо, щоб не оновлювати приховану панель
           }
         },
 
         tick: function(time, deltaTime) {
+          // Якщо панель невидима, не оновлюємо її
+          if (!this.el.getAttribute('visible')) return; 
+
           if (time - this.lastUpdateTime > this.updateInterval) {
             this.updatePanel();
             this.lastUpdateTime = time;
