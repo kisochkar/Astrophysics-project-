@@ -57,10 +57,7 @@
 
         init: function () {
             if (this.data.type === 'star') {
-                this.spectralClass = this.assignSpectralClass();
-                this.luminosityClass = "V";
-                this.temperature = this.calculateTemperature(this.spectralClass);
-                this.classificationText = `${this.spectralClass}${this.luminosityClass} (${this.temperature}K)`;
+                this.classificationText = this.data.name;
             } else {
                 this.planetTypeDetail = this.getPlanetTypeDetail(this.data.type);
                 this.classificationText = `${this.planetTypeDetail}`;
@@ -75,27 +72,6 @@
               this.data.v = [0, 0, 0];
             }
             this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
-        },
-
-        assignSpectralClass: function() {
-            if (this.data.name === 'Sun') return 'G2';
-            const classes = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
-            const subClasses = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            return classes[Math.floor(Math.random() * classes.length)] + subClasses[Math.floor(Math.random() * subClasses.length)];
-        },
-
-        calculateTemperature: function(spectralClass) {
-            const temperatures = {
-                'O': [25000, 50000], 'B': [10000, 25000], 'A': [7500, 10000],
-                'F': [6000, 7500], 'G': [5200, 6000], 'K': [3700, 5200],
-                'M': [2400, 3700]
-            };
-            const prefix = spectralClass.charAt(0);
-            if (temperatures[prefix]) {
-                const [minT, maxT] = temperatures[prefix];
-                return Math.floor(Math.random() * (maxT - minT) + minT);
-            }
-            return 5778;
         },
 
         getPlanetTypeDetail: function(type) {
@@ -198,17 +174,17 @@
           this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V', description: 'Зірка головної послідовності' },
-            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III', description: 'Червоний гігант' },
-            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA', description: 'Білий карлик' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II', description: 'Наднова' }
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Зірка' },
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, description: 'Червоний гігант' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, description: 'Білий карлик' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, description: 'Наднова' }
           ];
 
           this.currentPhaseIndex = 0;
           this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
 
           this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
-          this.classificationText = `${this.evolutionPhases[this.currentPhaseIndex].spectralType} (${this.evolutionPhases[this.currentPhaseIndex].description})`;
+          this.classificationText = `${this.evolutionPhases[this.currentPhaseIndex].description}`;
         },
 
         tick: function(time, deltaTime) {
@@ -226,7 +202,7 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
-            this.classificationText = `${currentPhase.spectralType} (${currentPhase.description})`;
+            this.classificationText = `${currentPhase.description}`;
           }
 
           this.updateStarVisuals(currentPhase);
@@ -379,20 +355,20 @@
                 }
 
                 this.nameText.setAttribute('value', `Назва: ${planetData.name}`);
-                this.classificationText.setAttribute('value', `Клас/Деталі: ${infoValue}`);
+                this.classificationText.setAttribute('value', `Деталі: ${infoValue}`);
                 this.typeText.setAttribute('value', typeValue);
                 this.massText.setAttribute('value', massValue);
 
             } else {
                 this.nameText.setAttribute('value', 'Назва: ---');
-                this.classificationText.setAttribute('value', 'Клас/Деталі: ---');
+                this.classificationText.setAttribute('value', 'Деталі: ---');
                 this.typeText.setAttribute('value', 'Тип: ---');
                 this.massText.setAttribute('value', 'Маса: ---');
             }
             this.prevNearestObject = nearestObject;
           } else if (!nearestObject) {
               this.nameText.setAttribute('value', 'Назва: ---');
-              this.classificationText.setAttribute('value', 'Клас/Деталі: ---');
+              this.classificationText.setAttribute('value', 'Деталі: ---');
               this.typeText.setAttribute('value', 'Тип: ---');
               this.massText.setAttribute('value', 'Маса: ---');
               this.prevNearestObject = null;
@@ -482,7 +458,7 @@
           <a-text value="--- Зірка ---" position="0 0.75 0" align="center" color="#FFD700" width="2.8" wrap-count="25"></a-text>
           <a-text class="info-panel-name" value="Назва: ---" position="-1.4 0.45 0"
                   align="left" color="white" width="2.8" wrap-count="25"></a-text>
-          <a-text class="info-panel-classification" value="Клас: ---" position="-1.4 0.15 0"
+          <a-text class="info-panel-classification" value="Деталі: ---" position="-1.4 0.15 0"
                   align="left" color="white" width="2.8" wrap-count="25"></a-text>
           <a-text class="info-panel-type" value="Тип: ---" position="-1.4 -0.15 0"
                   align="left" color="white" width="2.8" wrap-count="25"></a-text>
