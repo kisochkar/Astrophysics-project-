@@ -254,34 +254,40 @@
             return;
           }
           this.updatePosition = this.updatePosition.bind(this);
-          this.cameraEl.object3D.add(this.el.object3D);
+          // Changed: attaching to camera's object3D, which means position is local to camera
+          this.cameraEl.object3D.add(this.el.object3D); 
           this.updatePosition();
         },
-        tick: function() {
-        },
+        // We only need to update if alignment or distance changes, or if camera moves independently.
+        // For static panel, init update is enough.
+        // tick: function() {
+        //     this.updatePosition(); 
+        // },
         updatePosition: function() {
           const data = this.data;
-          let x = 0, y = 0, z = -data.distance;
+          let x = 0, y = 0, z = -data.distance; 
 
           switch (data.alignment) {
             case 'center':
                 x = 0; y = 0;
                 break;
             case 'top-left':
-                x = -0.5 * data.distance;
-                y = 0.5 * data.distance * 0.5;
+                // Adjust these values based on the panel's own width/height after scaling
+                // (width/height of plane is 3x1.5, scale 0.8 makes it 2.4x1.2)
+                x = -0.8; // Move left
+                y = 0.5;  // Move up
                 break;
             case 'top-right':
-                x = 0.5 * data.distance;
-                y = 0.5 * data.distance * 0.5;
+                x = 0.8;
+                y = 0.5;
                 break;
             case 'bottom-left':
-                x = -0.5 * data.distance;
-                y = -0.5 * data.distance * 0.5;
+                x = -0.8;
+                y = -0.5;
                 break;
             case 'bottom-right':
-                x = 0.5 * data.distance;
-                y = -0.5 * data.distance * 0.5;
+                x = 0.8;
+                y = -0.5;
                 break;
             default:
                 const pos = data.position.split(' ').map(Number);
@@ -423,11 +429,14 @@
                   originalRadius: currentStarSize
               });
             }
+            // Повернено атрибут 'planet' для фонових зірок
             star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: 1.989e30; dist: ${distance}`); 
 
             starsContainer.appendChild(star);
 
           } catch (e) {
+             console.error("Помилка при генерації фонової зірки:", e);
+             break;
           }
         }
       }
@@ -476,15 +485,11 @@
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
 
-      <a-entity camera-relative="alignment: top-left; distance: 2.0" info-panel="" scale="0.2 0.2 0.2">
-          <a-plane color="#333" width="3" height="1.5" position="0 0 -0.01" opacity="0.8"></a-plane>
+      <a-entity camera-relative="alignment: top-left; distance: 2.5" info-panel="" scale="0.8 0.8 0.8"> <a-plane color="#333" width="3" height="1.5" position="0 0 -0.01" opacity="0.8"></a-plane>
           <a-text id="info-panel-name" value="Назва: ---" position="-1.4 0.5 0"
-                  align="left" color="white" width="2.8"></a-text>
-          <a-text id="info-panel-classification" value="Клас: ---" position="-1.4 0.1 0"
-                  align="left" color="white" width="2.8"></a-text>
-          <a-text id="info-panel-type" value="Тип: ---" position="-1.4 -0.3 0"
-                  align="left" color="white" width="2.8"></a-text>
-      </a-entity>
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text> <a-text id="info-panel-classification" value="Клас: ---" position="-1.4 0.1 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text> <a-text id="info-panel-type" value="Тип: ---" position="-1.4 -0.3 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text> </a-entity>
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
