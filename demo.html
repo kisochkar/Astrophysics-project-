@@ -169,11 +169,12 @@
 
         updateStarVisuals: function(phase) {
           this.star.setAttribute('radius', this.initialRadius * phase.scaleFactor);
-         this.star.setAttribute('material', `shader: standard; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
+          this.star.setAttribute('material', `shader: standard; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
         }
       });
 
       function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
+        console.log('Початок генерації фонових зірок. numStars:', numStars);
         const scene = document.querySelector('a-scene');
         if (!scene) {
           console.error('A-Frame scene not found.');
@@ -183,40 +184,52 @@
         const starsContainer = document.createElement('a-entity');
         starsContainer.setAttribute('id', 'background-stars');
         scene.appendChild(starsContainer);
+        console.log('Контейнер для зірок додано до сцени:', starsContainer);
 
         for (let i = 0; i < numStars; i++) {
-          const star = document.createElement('a-sphere');
-          const currentStarSize = 100; 
-          star.setAttribute('radius', currentStarSize);
-          star.setAttribute('color', '#FFFFFF');
-          star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 0.5;');
+          try {
+            console.log(`Створюємо зірку №${i}...`);
 
-          let x, y, z;
-          let distance;
-          do {
-            x = (Math.random() * 2 - 1) * maxDistance;
-            y = (Math.random() * 2 - 1) * maxDistance;
-            z = (Math.random() * 2 - 1) * maxDistance;
-            distance = Math.sqrt(x*x + y*y + z*z);
-          } while (distance < minDistance || distance > maxDistance);
+            const star = document.createElement('a-sphere');
+            const currentStarSize = 100; // Тимчасово великий радіус для діагностики
+            star.setAttribute('radius', currentStarSize);
+            star.setAttribute('color', '#FFFFFF');
+            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 0.5;');
 
-          star.setAttribute('position', `${x} ${y} ${z}`);
-          
-          if (evolveStars) {
-            star.setAttribute('star-evolution-effect', {
-                evolutionSpeed: 0.0001 * (0.5 + Math.random()),
-                originalRadius: currentStarSize
-            });
+            let x, y, z;
+            let distance;
+            do {
+              x = (Math.random() * 2 - 1) * maxDistance;
+              y = (Math.random() * 2 - 1) * maxDistance;
+              z = (Math.random() * 2 - 1) * maxDistance;
+              distance = Math.sqrt(x*x + y*y + z*z);
+            } while (distance < minDistance || distance > maxDistance);
+
+            star.setAttribute('position', `${x} ${y} ${z}`);
+            
+            if (evolveStars) {
+              star.setAttribute('star-evolution-effect', {
+                  evolutionSpeed: 0.0001 * (0.5 + Math.random()),
+                  originalRadius: currentStarSize
+              });
+            }
+
+            starsContainer.appendChild(star);
+            console.log(`Зірка №${i} додана.`);
+
+          } catch (e) {
+            console.error(`Помилка при створенні зірки №${i}:`, e);
+            break; // Припиняємо цикл, якщо виникла помилка
           }
-
-          starsContainer.appendChild(star);
         }
+        console.log(`Генерація зірок завершена (або перервана). Очікувалося ${numStars} зірок.`);
       }
 
       document.addEventListener('DOMContentLoaded', function() {
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
+            console.log('Сцена A-Frame завантажена. Спроба генерації зірок...');
             generateBackgroundStars(500, 200, 50, 0.01, true); 
           });
         }
