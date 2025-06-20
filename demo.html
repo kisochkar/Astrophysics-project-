@@ -56,8 +56,6 @@
         },
 
         init: function () {
-            this.classificationText = "---"; 
-
             if (this.data.T > 0) {
               this.data.pos[0] = this.data.dist;
               const centralMass = 1.989e30;
@@ -149,7 +147,6 @@
       AFRAME.registerComponent('star-evolution-effect', {
         schema: {
           evolutionSpeed: {type: 'number', default: 0.0005},
-          initialPhase: {type: 'string', default: 'mainSequence'},
           originalRadius: {type: 'number', default: 0.2}
         },
 
@@ -169,7 +166,7 @@
           this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
 
           this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
-          this.classificationText = `${this.evolutionPhases[this.currentPhaseIndex].description}`;
+          this.currentDescription = this.evolutionPhases[this.currentPhaseIndex].description;
         },
 
         tick: function(time, deltaTime) {
@@ -187,7 +184,7 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
-            this.classificationText = `${currentPhase.description}`;
+            this.currentDescription = currentPhase.description;
           }
 
           this.updateStarVisuals(currentPhase);
@@ -322,10 +319,14 @@
                 if (planetData.type === 'star') {
                     const starEffect = nearestObject.components['star-evolution-effect'];
                     if (starEffect) {
-                        infoValue = starEffect.classificationText;
+                        infoValue = starEffect.currentDescription;
+                        typeValue = "Тип: Зірка";
+                    } else {
+                        infoValue = "---";
                         typeValue = "Тип: Зірка";
                     }
                 } else {
+                    infoValue = "---";
                     typeValue = "Тип: Планета"; 
                 }
 
