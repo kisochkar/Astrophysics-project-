@@ -34,7 +34,12 @@
     <script>
       const day = 24.0 * 60 * 60;
       const G = 6.67e-11;
-      const K = 5e10;
+      // ЗМЕНШЕНО K для ЗБІЛЬШЕННЯ ВІДНОСНИХ ВІДСТАНЕЙ (зробить систему більшою)
+      // АБО ЗБІЛЬШЕНО K для ЗМЕНШЕННЯ ВІДНОСНИХ ВІДСТАНЕЙ (зробить систему меншою, легше побачити рух)
+      // Давайте спробуємо зробити K меншим, щоб система була більшою і легше було бачити об'єкти
+      // const K = 5e10; // Оригінал
+      const K = 5e9; // Зменшення K в 10 разів, щоб збільшити розміри в 10 разів у сцені
+      // Якщо це забагато, спробуйте K = 1e10 (у 5 разів більші об'єкти)
 
       // Функція для генерації унікальних ID
       function generateUUID() {
@@ -66,6 +71,7 @@
               this.data.pos = [0, 0, 0];
               this.data.v = [0, 0, 0];
             }
+            // Позиції планет тепер будуть більшими через зменшення K
             this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
         }
       });
@@ -82,15 +88,16 @@
               }
           });
 
-          // Виклик generateBackgroundStars при ініціалізації main компонента
-          generateBackgroundStars(500, 50, 10, 0.5, true); // Збільшено starBaseSize до 0.5
+          // Залишаємо starBaseSize = 0.5, але спробуйте збільшити до 1.0, якщо зірки все ще не видно
+          generateBackgroundStars(500, 50, 10, 0.5, true); 
           console.log("Запустили генерацію фонових зірок.");
         },
 
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          const dt = day * 0.1;
+          // ЗБІЛЬШЕНО КРОК ЧАСУ (dt) для прискорення симуляції
+          const dt = day * 10; // Раніше було day * 0.1. Тепер 10 днів за тік!
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -98,7 +105,6 @@
 
             if (!planet_i) continue;
 
-            // Обробка зірок у центрі (якщо це Сонце)
             if (planet_i.type === 'star' && planet_i.dist === 0) {
                 planet_i.pos = [0, 0, 0];
                 planet_i.v = [0, 0, 0];
@@ -199,7 +205,8 @@
         updateStarVisuals: function(phase) {
           const newRadius = this.initialRadius * phase.scaleFactor;
           const newColor = phase.color;
-          const emissiveIntensity = (phase.name === 'supernova') ? 1.5 : 0.8;
+          // ЗБІЛЬШЕНО EMISSIVE INTENSITY для зірок, щоб зробити їх яскравішими
+          const emissiveIntensity = (phase.name === 'supernova') ? 3.0 : 1.5; // Збільшено з 1.5/0.8
 
           this.star.setAttribute('radius', newRadius);
           this.star.setAttribute('material', `shader: standard; emissive: ${newColor}; emissiveIntensity: ${emissiveIntensity};`);
@@ -220,7 +227,6 @@
         }
       });
 
-      // Компонент для розміщення елементів відносно камери (залишається прихованим)
       AFRAME.registerComponent('camera-relative', {
         schema: {
           position: {type: 'string', default: '0 0 -1'},
@@ -235,7 +241,7 @@
           }
           this.updatePosition = this.updatePosition.bind(this);
           this.cameraEl.object3D.add(this.el.object3D); 
-          this.el.setAttribute('visible', 'false'); // За замовчуванням приховано
+          this.el.setAttribute('visible', 'false'); 
           this.updatePosition();
         },
         updatePosition: function() {
@@ -272,7 +278,6 @@
       });
 
 
-      // Компонент інформаційної панелі (залишається прихованою)
       AFRAME.registerComponent('info-panel', {
         schema: {
             targetType: {type: 'string', default: 'star'}, 
@@ -376,7 +381,7 @@
       });
 
 
-      function generateBackgroundStars(numStars = 500, maxDistance = 50, minDistance = 10, starBaseSize = 0.5, evolveStars = true) { // Збільшено starBaseSize
+      function generateBackgroundStars(numStars = 500, maxDistance = 50, minDistance = 10, starBaseSize = 0.5, evolveStars = true) { 
         const scene = document.querySelector('a-scene');
         if (!scene) {
           console.warn("Scene not found for star generation.");
@@ -448,7 +453,8 @@
             
             star.setAttribute('radius', currentStarSize);
             star.setAttribute('color', selectedSpectralClass.color); 
-            star.setAttribute('material', `shader: standard; emissive: ${selectedSpectralClass.color}; emissiveIntensity: 1.0;`); 
+            // ЗБІЛЬШЕНО EMISSIVE INTENSITY тут теж, для яскравіших зірок
+            star.setAttribute('material', `shader: standard; emissive: ${selectedSpectralClass.color}; emissiveIntensity: 1.5;`); 
 
             let x, y, z;
             let distance;
@@ -472,7 +478,6 @@
 
             starsContainer.appendChild(star);
 
-            // Консоль лог для діагностики, щоб перевірити параметри перших кількох зірок
             if (i < 5) {
                 console.log(`[Зірка ${i+1}] Spectral Type: ${randomSpectralClassKey}, Size: ${currentStarSize.toFixed(3)}, Pos: (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
             }
@@ -527,27 +532,23 @@
                   align="left" color="white" width="2.8" wrap-count="25"></a-text>
       </a-entity>
 
-      <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
+      <a-entity id="solar-system-container" scale="10 10 10" position="0 0 0">
 
         <a-entity gltf-model="#sun-model" id="sun-entity"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun; type: star; spectralType: G2V"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
+                  scale="2 2 2"> </a-entity>
 
         <a-entity gltf-model="#mercury-model" id="mercury-entity"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury; type: terrestrial"
-                  scale="0.05 0.05 0.05">
-        </a-entity>
+                  scale="0.2 0.2 0.2"> </a-entity>
 
         <a-entity gltf-model="#venus-model" id="venus-entity"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus; type: terrestrial"
-                  scale="0.08 0.08 0.08">
-        </a-entity>
+                  scale="0.3 0.3 0.3"> </a-entity>
 
         <a-entity id="earth-orbit-anchor"
                   planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth; type: terrestrial">
-            <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1">
-                <a-entity id="moon-orbit"
+            <a-entity gltf-model="#earth-model" scale="0.4 0.4 0.4"> <a-entity id="moon-orbit"
                           animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
                     <a-entity gltf-model="#moon-model"
                               position="0.05 0 0" scale="0.1 0.1 0.1">
@@ -565,34 +566,30 @@
 
         <a-entity gltf-model="#mars-model" id="mars-entity"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars; type: terrestrial"
-                  scale="0.06 0.06 0.06">
-        </a-entity>
+                  scale="0.25 0.25 0.25"> </a-entity>
 
         <a-entity gltf-model="#jupiter-model" id="jupiter-entity"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter; type: gasGiant"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
+                  scale="2 2 2"> </a-entity>
 
         <a-entity gltf-model="#saturn-model" id="saturn-entity"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn; type: gasGiant"
-                  scale="0.4 0.4 0.4">
-        </a-entity>
+                  scale="1.8 1.8 1.8"> </a-entity>
 
         <a-entity gltf-model="#uranus-model" id="uranus-entity"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus; type: iceGiant"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
+                  scale="1.2 1.2 1.2"> </a-entity>
 
         <a-entity gltf-model="#neptune-model" id="neptune-entity"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune; type: iceGiant"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
+                  scale="1.1 1.1 1.1"> </a-entity>
 
         <a-entity main></a-entity>
 
       </a-entity>
 
       <a-light type="ambient" color="#BBB"></a-light>
+      <a-light type="point" color="#FFF" intensity="1.5" position="0 0 0"></a-light> 
       <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
 
       <a-sky color="black"></a-sky>
