@@ -36,6 +36,13 @@
       const G = 6.67e-11;
       const K = 5e10;
 
+      function generateUUID() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+          });
+      }
+
       AFRAME.registerComponent('planet', {
         schema: {
           name: {type: 'string', default: ""},
@@ -45,19 +52,20 @@
           v: {type: 'array', default: [0,0,0]},
           a: {type: 'array', default: [0,0,0]},
           pos: {type: 'array', default: [0,0,0]},
-          type: {type: 'string', default: "unknown"} 
+          type: {type: 'string', default: "unknown"},
+          spectralType: {type: 'string', default: ""}
         },
 
         init: function () {
-          if (this.data.T > 0) {
-            this.data.pos[0] = this.data.dist;
-            const centralMass = 1.989e30;
-            this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
-          } else {
-            this.data.pos = [0, 0, 0];
-            this.data.v = [0, 0, 0];
-          }
-          this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
+            if (this.data.T > 0) {
+              this.data.pos[0] = this.data.dist;
+              const centralMass = 1.989e30;
+              this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
+            } else {
+              this.data.pos = [0, 0, 0];
+              this.data.v = [0, 0, 0];
+            }
+            this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
         }
       });
 
@@ -65,6 +73,12 @@
         init: function() {
           this.solar_system = document.querySelectorAll('[planet]');
           this.simulation_paused = false;
+
+          document.addEventListener('keydown', (event) => {
+              if (event.key === 'p' || event.key === 'P') {
+                  this.simulation_paused = !this.simulation_paused;
+              }
+          });
         },
 
         tick: function (time, deltaTime) {
@@ -77,6 +91,13 @@
             let planet_i = planet_i_el.getAttribute('planet');
 
             if (!planet_i) continue;
+
+            if (planet_i.type === 'star' && planet_i.dist === 0) {
+                planet_i.pos = [0, 0, 0];
+                planet_i.v = [0, 0, 0];
+                planet_i_el.setAttribute('position', '0 0 0');
+                continue;
+            }
 
             planet_i.a = [0, 0, 0];
 
@@ -127,7 +148,6 @@
       AFRAME.registerComponent('star-evolution-effect', {
         schema: {
           evolutionSpeed: {type: 'number', default: 0.0005},
-          initialPhase: {type: 'string', default: 'mainSequence'},
           originalRadius: {type: 'number', default: 0.2}
         },
 
@@ -137,17 +157,16 @@
           this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
-            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
-            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' }
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Звичайна зірка' }, 
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, description: 'Червоний гігант' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, description: 'Білий карлик' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, description: 'Наднова' }
           ];
 
           this.currentPhaseIndex = 0;
           this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
 
           this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
-          console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} ініціалізована. Початкова фаза: ${this.evolutionPhases[this.currentPhaseIndex].name}`);
         },
 
         tick: function(time, deltaTime) {
@@ -165,7 +184,6 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
-            console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} переходить до фази: ${currentPhase.name}. Час: ${this.evolutionTime.toFixed(0)}`);
           }
 
           this.updateStarVisuals(currentPhase);
@@ -181,9 +199,160 @@
         }
       });
 
+      AFRAME.registerComponent('camera-relative', {
+        schema: {
+          position: {type: 'string', default: '0 0 -1'},
+          alignment: {type: 'string', default: 'top-left'}, 
+          distance: {type: 'number', default: 2.0}
+        },
+        init: function() {
+          this.cameraEl = document.querySelector('a-camera');
+          if (!this.cameraEl) {
+            console.warn("Camera not found for camera-relative component.");
+            return;
+          }
+          this.updatePosition = this.updatePosition.bind(this);
+          this.cameraEl.object3D.add(this.el.object3D); 
+          this.el.setAttribute('visible', 'true');
+          this.updatePosition();
+        },
+        updatePosition: function() {
+          const data = this.data;
+          let x = 0, y = 0, z = -data.distance; 
+
+          switch (data.alignment) {
+            case 'center':
+                x = 0; y = 0;
+                break;
+            case 'top-left':
+                x = -1.2;
+                y = 0.7;
+                break;
+            case 'top-right':
+                x = 1.2;
+                y = 0.7;
+                break;
+            case 'bottom-left':
+                x = -0.8;
+                y = -0.5;
+                break;
+            case 'bottom-right':
+                x = 0.8;
+                y = -0.5;
+                break;
+            default:
+                const pos = data.position.split(' ').map(Number);
+                x = pos[0]; y = pos[1]; z = pos[2];
+                break;
+          }
+          this.el.setAttribute('position', `${x} ${y} ${z}`);
+        }
+      });
+
+
+      AFRAME.registerComponent('info-panel', {
+        schema: {
+            targetType: {type: 'string', default: 'star'},
+            maxDistance: {type: 'number', default: 5}
+        },
+        init: function() {
+          this.nameText = this.el.querySelector('.info-panel-name');
+          this.classificationText = this.el.querySelector('.info-panel-classification');
+          this.typeText = this.el.querySelector('.info-panel-type');
+          this.massText = this.el.querySelector('.info-panel-mass');
+
+          this.allObjects = document.querySelectorAll('[planet]');
+          this.camera = document.querySelector('a-camera');
+          this.prevNearestObject = null;
+          this.updateInterval = 500;
+          this.lastUpdateTime = 0;
+
+          if (!this.nameText || !this.classificationText || !this.typeText || !this.camera || !this.massText) {
+              this.el.setAttribute('visible', 'false');
+              console.warn("Info panel elements not found. Panel hidden.");
+          } else {
+              this.el.setAttribute('visible', 'true');
+              this.updatePanel();
+          }
+        },
+
+        tick: function(time, deltaTime) {
+          if (time - this.lastUpdateTime > this.updateInterval) {
+            this.updatePanel();
+            this.lastUpdateTime = time;
+          }
+        },
+
+        updatePanel: function() {
+          if (!this.camera) return;
+
+          let nearestObject = null;
+          let minDistance = Infinity;
+          const cameraPosition = new THREE.Vector3().setFromMatrixPosition(this.camera.object3D.matrixWorld);
+
+          const filteredObjects = Array.from(this.allObjects).filter(obj => {
+              const planetData = obj.getAttribute('planet');
+              if (!planetData) return false;
+              return this.data.targetType === 'star' ? planetData.type === 'star' : planetData.type !== 'star';
+          });
+
+          filteredObjects.forEach(obj => {
+            if (!obj.object3D) return;
+
+            const objPosition = new THREE.Vector3().setFromMatrixPosition(obj.object3D.matrixWorld);
+            const distance = cameraPosition.distanceTo(objPosition);
+
+            if (distance < minDistance && distance <= this.data.maxDistance) {
+              minDistance = distance;
+              nearestObject = obj;
+            }
+          });
+
+          if (nearestObject) {
+            if (nearestObject !== this.prevNearestObject) {
+                const planetData = nearestObject.getAttribute('planet');
+                if (planetData) {
+                    let classificationValue = '---';
+                    let typeValue = '';
+                    let massValue = `Маса: ${planetData.mass.toExponential(2)} кг`;
+
+                    if (planetData.type === 'star') {
+                        typeValue = "Тип: Зірка";
+                        if (planetData.spectralType) {
+                            classificationValue = `Спектральний тип: ${planetData.spectralType}`;
+                        }
+                    } else {
+                        typeValue = "Тип: Планета"; 
+                    }
+
+                    this.nameText.setAttribute('value', `Назва: ${planetData.name}`);
+                    this.classificationText.setAttribute('value', classificationValue);
+                    this.typeText.setAttribute('value', typeValue);
+                    this.massText.setAttribute('value', massValue);
+
+                } else {
+                    this.nameText.setAttribute('value', 'Назва: ---');
+                    this.classificationText.setAttribute('value', 'Деталі: ---');
+                    this.typeText.setAttribute('value', 'Тип: ---');
+                    this.massText.setAttribute('value', 'Маса: ---');
+                }
+                this.prevNearestObject = nearestObject;
+            }
+          } else {
+              this.nameText.setAttribute('value', 'Назва: ---');
+              this.classificationText.setAttribute('value', 'Деталі: ---');
+              this.typeText.setAttribute('value', 'Тип: ---');
+              this.massText.setAttribute('value', 'Маса: ---');
+              this.prevNearestObject = null;
+          }
+        }
+      });
+
+
       function generateBackgroundStars(numStars = 500, maxDistance = 50, minDistance = 10, starBaseSize = 0.2, evolveStars = true) {
         const scene = document.querySelector('a-scene');
         if (!scene) {
+          console.warn("Scene not found for star generation.");
           return;
         }
 
@@ -191,9 +360,30 @@
         starsContainer.setAttribute('id', 'background-stars');
         scene.appendChild(starsContainer);
 
+        const spectralTypes = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
+        const spectralTypeDistribution = {
+            'O': 0.000003, 'B': 0.13, 'A': 0.6, 'F': 3, 'G': 7.6, 'K': 12, 'M': 76
+        };
+
+        function getRandomSpectralType() {
+            let rand = Math.random() * 100;
+            let cumulative = 0;
+            for (let type of spectralTypes) {
+                cumulative += spectralTypeDistribution[type];
+                if (rand <= cumulative) {
+                    return type;
+                }
+            }
+            return 'M';
+        }
+
+
         for (let i = 0; i < numStars; i++) {
           try {
             const star = document.createElement('a-sphere');
+            const starId = `star-${generateUUID()}`;
+            star.setAttribute('id', starId);
+
             const currentStarSize = starBaseSize * (0.5 + Math.random());
             
             star.setAttribute('radius', currentStarSize);
@@ -218,10 +408,13 @@
               });
             }
 
+            const starSpectralType = getRandomSpectralType();
+            star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: ${1.989e30 * (0.5 + Math.random() * 2)}; dist: ${distance}; spectralType: ${starSpectralType}`); 
+
             starsContainer.appendChild(star);
 
           } catch (e) {
-            break;
+             console.error("Помилка при генерації фонової зірки:", e);
           }
         }
       }
@@ -231,19 +424,6 @@
         if (scene) {
           scene.addEventListener('loaded', function() {
             generateBackgroundStars(500, 50, 10, 0.2, true);
-            
-            setTimeout(() => {
-                const stars = document.querySelectorAll('#background-stars a-sphere');
-                console.log(`Знайдено ${stars.length} зірок у DOM:`);
-                stars.forEach((star, index) => {
-                    if (star.hasAttribute('star-evolution-effect')) {
-                        const effectData = star.getAttribute('star-evolution-effect');
-                        console.log(`Зірка ${index}: Має star-evolution-effect. OriginalRadius: ${effectData.originalRadius}, EvolutionSpeed: ${effectData.evolutionSpeed}`);
-                    } else {
-                        console.log(`Зірка ${index}: НЕ МАЄ star-evolution-effect.`);
-                    }
-                });
-            }, 3000);
           });
         }
       });
@@ -265,19 +445,45 @@
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
 
+      <a-entity camera-relative="alignment: top-left; distance: 2.0" info-panel="targetType: star; maxDistance: 50" scale="0.6 0.6 0.6">
+          <a-plane color="#333" width="3" height="1.8" position="0 0 -0.01" opacity="0.8"></a-plane> 
+          <a-text value="--- Зірка ---" position="0 0.75 0" align="center" color="#FFD700" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-name" value="Назва: ---" position="-1.4 0.45 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-classification" value="Спектральний тип: ---" position="-1.4 0.15 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-type" value="Тип: ---" position="-1.4 -0.15 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-mass" value="Маса: ---" position="-1.4 -0.45 0" 
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+      </a-entity>
+
+      <a-entity camera-relative="alignment: top-right; distance: 2.0" info-panel="targetType: planet; maxDistance: 5" scale="0.6 0.6 0.6">
+          <a-plane color="#333" width="3" height="1.8" position="0 0 -0.01" opacity="0.8"></a-plane>
+          <a-text value="--- Планета ---" position="0 0.75 0" align="center" color="#ADD8E6" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-name" value="Назва: ---" position="-1.4 0.45 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-classification" value="Деталі: ---" position="-1.4 0.15 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-type" value="Тип: ---" position="-1.4 -0.15 0"
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+          <a-text class="info-panel-mass" value="Маса: ---" position="-1.4 -0.45 0" 
+                  align="left" color="white" width="2.8" wrap-count="25"></a-text>
+      </a-entity>
+
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
-        <a-entity gltf-model="#sun-model"
-                  planet="dist: 0; mass: 1.989e30; T: 0; name: Sun; type: star"
+        <a-entity gltf-model="#sun-model" id="sun-entity"
+                  planet="dist: 0; mass: 1.989e30; T: 0; name: Sun; type: star; spectralType: G2V"
                   scale="0.5 0.5 0.5">
         </a-entity>
 
-        <a-entity gltf-model="#mercury-model"
+        <a-entity gltf-model="#mercury-model" id="mercury-entity"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury; type: terrestrial"
                   scale="0.05 0.05 0.05">
         </a-entity>
 
-        <a-entity gltf-model="#venus-model"
+        <a-entity gltf-model="#venus-model" id="venus-entity"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus; type: terrestrial"
                   scale="0.08 0.08 0.08">
         </a-entity>
@@ -301,27 +507,27 @@
             </a-entity>
         </a-entity>
 
-        <a-entity gltf-model="#mars-model"
+        <a-entity gltf-model="#mars-model" id="mars-entity"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars; type: terrestrial"
                   scale="0.06 0.06 0.06">
         </a-entity>
 
-        <a-entity gltf-model="#jupiter-model"
+        <a-entity gltf-model="#jupiter-model" id="jupiter-entity"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter; type: gasGiant"
                   scale="0.5 0.5 0.5">
         </a-entity>
 
-        <a-entity gltf-model="#saturn-model"
+        <a-entity gltf-model="#saturn-model" id="saturn-entity"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn; type: gasGiant"
                   scale="0.4 0.4 0.4">
         </a-entity>
 
-        <a-entity gltf-model="#uranus-model"
+        <a-entity gltf-model="#uranus-model" id="uranus-entity"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus; type: iceGiant"
                   scale="0.3 0.3 0.3">
         </a-entity>
 
-        <a-entity gltf-model="#neptune-model"
+        <a-entity gltf-model="#neptune-model" id="neptune-entity"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune; type: iceGiant"
                   scale="0.3 0.3 0.3">
         </a-entity>
