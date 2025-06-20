@@ -56,12 +56,7 @@
         },
 
         init: function () {
-            if (this.data.type === 'star') {
-                this.classificationText = this.data.name;
-            } else {
-                this.planetTypeDetail = this.getPlanetTypeDetail(this.data.type);
-                this.classificationText = `${this.planetTypeDetail}`;
-            }
+            this.classificationText = "---"; 
 
             if (this.data.T > 0) {
               this.data.pos[0] = this.data.dist;
@@ -72,16 +67,6 @@
               this.data.v = [0, 0, 0];
             }
             this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
-        },
-
-        getPlanetTypeDetail: function(type) {
-            switch (type) {
-                case 'terrestrial': return 'Землеподібна (скеляста)';
-                case 'gasGiant': return 'Газовий гігант';
-                case 'iceGiant': return 'Крижаний гігант';
-                case 'dwarfPlanet': return 'Карликова планета';
-                default: return 'Невідомий тип';
-            }
         }
       });
 
@@ -174,7 +159,7 @@
           this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Зірка' },
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Звичайна зірка' }, 
             { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, description: 'Червоний гігант' },
             { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, description: 'Білий карлик' },
             { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, description: 'Наднова' }
@@ -339,19 +324,9 @@
                     if (starEffect) {
                         infoValue = starEffect.classificationText;
                         typeValue = "Тип: Зірка";
-                    } else {
-                        const planetComponent = nearestObject.components['planet'];
-                        if (planetComponent) {
-                            infoValue = planetComponent.classificationText;
-                            typeValue = "Тип: Зірка";
-                        }
                     }
                 } else {
-                    const planetComponent = nearestObject.components['planet'];
-                    if (planetComponent) {
-                        infoValue = planetComponent.classificationText;
-                        typeValue = `Тип: ${planetComponent.planetTypeDetail}`;
-                    }
+                    typeValue = "Тип: Планета"; 
                 }
 
                 this.nameText.setAttribute('value', `Назва: ${planetData.name}`);
