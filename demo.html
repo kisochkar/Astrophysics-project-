@@ -36,6 +36,13 @@
       const G = 6.67e-11;
       const K = 5e10;
 
+      function generateUUID() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+          });
+      }
+
       AFRAME.registerComponent('planet', {
         schema: {
           name: {type: 'string', default: ""},
@@ -45,10 +52,20 @@
           v: {type: 'array', default: [0,0,0]},
           a: {type: 'array', default: [0,0,0]},
           pos: {type: 'array', default: [0,0,0]},
-          type: {type: 'string', default: "unknown"} 
+          type: {type: 'string', default: "unknown"}
         },
 
         init: function () {
+          if (this.data.type === 'star') {
+              this.spectralClass = this.assignSpectralClass();
+              this.luminosityClass = "V";
+              this.temperature = this.calculateTemperature(this.spectralClass);
+              console.log(`[Еволюція Зірок] Зірка ${this.data.name} (ID: ${this.el.id || this.el.object3D.uuid}) ініціалізована. Класифікація: ${this.spectralClass}${this.luminosityClass} (Температура: ${this.temperature}K)`);
+          } else {
+              this.planetTypeDetail = this.getPlanetTypeDetail(this.data.type);
+              console.log(`[Відкриття Планет] Планета ${this.data.name} (ID: ${this.el.id || this.el.object3D.uuid}) ініціалізована. Тип: ${this.planetTypeDetail}`);
+          }
+
           if (this.data.T > 0) {
             this.data.pos[0] = this.data.dist;
             const centralMass = 1.989e30;
@@ -58,6 +75,25 @@
             this.data.v = [0, 0, 0];
           }
           this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
+        },
+
+        assignSpectralClass: function() {
+            return 'G2';
+        },
+
+        calculateTemperature: function(spectralClass) {
+            if (spectralClass === 'G2') return 5778;
+            return 5778;
+        },
+
+        getPlanetTypeDetail: function(type) {
+            switch (type) {
+                case 'terrestrial': return 'Землеподібна (скеляста)';
+                case 'gasGiant': return 'Газовий гігант';
+                case 'iceGiant': return 'Крижаний гігант';
+                case 'dwarfPlanet': return 'Карликова планета';
+                default: return 'Невідомий тип';
+            }
         }
       });
 
@@ -65,6 +101,13 @@
         init: function() {
           this.solar_system = document.querySelectorAll('[planet]');
           this.simulation_paused = false;
+
+          document.addEventListener('keydown', (event) => {
+              if (event.key === 'p' || event.key === 'P') {
+                  this.simulation_paused = !this.simulation_paused;
+                  console.log(`Симуляція ${this.simulation_paused ? 'ПРИЗУПИНЕНА' : 'ВІДНОВЛЕНА'}`);
+              }
+          });
         },
 
         tick: function (time, deltaTime) {
@@ -77,6 +120,13 @@
             let planet_i = planet_i_el.getAttribute('planet');
 
             if (!planet_i) continue;
+
+            if (planet_i.type === 'star' && planet_i.dist === 0) {
+                planet_i.pos = [0, 0, 0];
+                planet_i.v = [0, 0, 0];
+                planet_i_el.setAttribute('position', '0 0 0');
+                continue;
+            }
 
             planet_i.a = [0, 0, 0];
 
@@ -137,17 +187,17 @@
           this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
-            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
-            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' }
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V', description: 'Зірка головної послідовності' },
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III', description: 'Червоний гігант' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA', description: 'Білий карлик' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II', description: 'Наднова' }
           ];
 
           this.currentPhaseIndex = 0;
           this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
 
           this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
-          console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} ініціалізована. Початкова фаза: ${this.evolutionPhases[this.currentPhaseIndex].name}`);
+          console.log(`[Еволюція Зірок] Зірка ${this.star.id || this.star.object3D.uuid} ініціалізована. Початкова фаза: ${this.evolutionPhases[this.currentPhaseIndex].name}. Класифікація: ${this.evolutionPhases[this.currentPhaseIndex].spectralType} (${this.evolutionPhases[this.currentPhaseIndex].description})`);
         },
 
         tick: function(time, deltaTime) {
@@ -165,7 +215,7 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
-            console.log(`[StarEvolution] Зірка ${this.star.id || this.star.object3D.uuid} переходить до фази: ${currentPhase.name}. Час: ${this.evolutionTime.toFixed(0)}`);
+            console.log(`[Еволюція Зірок] Зірка ${this.star.id || this.star.object3D.uuid} переходить до фази: ${currentPhase.name}. Класифікація: ${currentPhase.spectralType} (${currentPhase.description}). Час: ${this.evolutionTime.toFixed(0)}`);
           }
 
           this.updateStarVisuals(currentPhase);
@@ -194,6 +244,8 @@
         for (let i = 0; i < numStars; i++) {
           try {
             const star = document.createElement('a-sphere');
+            star.setAttribute('id', `star-${generateUUID()}`);
+
             const currentStarSize = starBaseSize * (0.5 + Math.random());
             
             star.setAttribute('radius', currentStarSize);
@@ -221,7 +273,7 @@
             starsContainer.appendChild(star);
 
           } catch (e) {
-            break;
+             break;
           }
         }
       }
@@ -234,15 +286,29 @@
             
             setTimeout(() => {
                 const stars = document.querySelectorAll('#background-stars a-sphere');
-                console.log(`Знайдено ${stars.length} зірок у DOM:`);
+                console.log(`Знайдено ${stars.length} фонових зірок у DOM після завантаження:`);
                 stars.forEach((star, index) => {
                     if (star.hasAttribute('star-evolution-effect')) {
-                        const effectData = star.getAttribute('star-evolution-effect');
-                        console.log(`Зірка ${index}: Має star-evolution-effect. OriginalRadius: ${effectData.originalRadius}, EvolutionSpeed: ${effectData.evolutionSpeed}`);
+                        const starEffectComponent = star.components['star-evolution-effect'];
+                        if (starEffectComponent) {
+                            const currentPhase = starEffectComponent.evolutionPhases[starEffectComponent.currentPhaseIndex];
+                            console.log(`Зірка ${star.id || star.object3D.uuid}: Поточна фаза: ${currentPhase.name}, Класифікація: ${currentPhase.spectralType} (${currentPhase.description})`);
+                        }
                     } else {
-                        console.log(`Зірка ${index}: НЕ МАЄ star-evolution-effect.`);
+                        console.log(`Зірка ${star.id || star.object3D.uuid}: НЕ МАЄ ефекту еволюції.`);
                     }
                 });
+
+                const planets = document.querySelectorAll('[planet]:not([type="star"])');
+                console.log(`Знайдено ${planets.length} планет у Сонячній системі після завантаження:`);
+                planets.forEach((planetEl) => {
+                    const planetData = planetEl.getAttribute('planet');
+                    const planetComponent = planetEl.components['planet'];
+                    if (planetComponent) {
+                        console.log(`Планета ${planetData.name} (ID: ${planetEl.id || planetEl.object3D.uuid}): Тип: ${planetComponent.planetTypeDetail}`);
+                    }
+                });
+
             }, 3000);
           });
         }
@@ -267,17 +333,17 @@
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
-        <a-entity gltf-model="#sun-model"
+        <a-entity gltf-model="#sun-model" id="sun-entity"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun; type: star"
                   scale="0.5 0.5 0.5">
         </a-entity>
 
-        <a-entity gltf-model="#mercury-model"
+        <a-entity gltf-model="#mercury-model" id="mercury-entity"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury; type: terrestrial"
                   scale="0.05 0.05 0.05">
         </a-entity>
 
-        <a-entity gltf-model="#venus-model"
+        <a-entity gltf-model="#venus-model" id="venus-entity"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus; type: terrestrial"
                   scale="0.08 0.08 0.08">
         </a-entity>
@@ -301,27 +367,27 @@
             </a-entity>
         </a-entity>
 
-        <a-entity gltf-model="#mars-model"
+        <a-entity gltf-model="#mars-model" id="mars-entity"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars; type: terrestrial"
                   scale="0.06 0.06 0.06">
         </a-entity>
 
-        <a-entity gltf-model="#jupiter-model"
+        <a-entity gltf-model="#jupiter-model" id="jupiter-entity"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter; type: gasGiant"
                   scale="0.5 0.5 0.5">
         </a-entity>
 
-        <a-entity gltf-model="#saturn-model"
+        <a-entity gltf-model="#saturn-model" id="saturn-entity"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn; type: gasGiant"
                   scale="0.4 0.4 0.4">
         </a-entity>
 
-        <a-entity gltf-model="#uranus-model"
+        <a-entity gltf-model="#uranus-model" id="uranus-entity"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus; type: iceGiant"
                   scale="0.3 0.3 0.3">
         </a-entity>
 
-        <a-entity gltf-model="#neptune-model"
+        <a-entity gltf-model="#neptune-model" id="neptune-entity"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune; type: iceGiant"
                   scale="0.3 0.3 0.3">
         </a-entity>
