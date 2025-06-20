@@ -69,7 +69,7 @@
         tick: function (time, deltaTime) {
           if (this.simulation_paused) return;
 
-          const dt = day * 0.1; // Поточна швидкість симуляції (0.1 дня за секунду)
+          const dt = day * 0.1;
 
           for (var i = 0; i < this.solar_system.length; i++) {
             let planet_i_el = this.solar_system[i];
@@ -122,13 +122,117 @@
           }
         }
       });
+
+      AFRAME.registerComponent('star-evolution', {
+        schema: {
+          evolutionSpeed: {type: 'number', default: 0.0001},
+          initialPhase: {type: 'string', default: 'mainSequence'},
+        },
+
+        init: function() {
+          this.evolutionTime = 0;
+          this.star = this.el;
+
+          this.evolutionPhases = [
+            { name: 'mainSequence', duration: 1000, color: '#FFFACD', scale: 0.5, spectralType: 'G2V' },
+            { name: 'subGiant', duration: 200, color: '#FFD700', scale: 0.6, spectralType: 'G5III' },
+            { name: 'redGiant', duration: 500, color: '#FF4500', scale: 2.0, spectralType: 'M0III' },
+            { name: 'heliumFlash', duration: 50, color: '#FFD700', scale: 1.5, spectralType: 'K0III' },
+            { name: 'horizontalBranch', duration: 300, color: '#FFA07A', scale: 0.8, spectralType: 'A0V' },
+            { name: 'AGB', duration: 400, color: '#8B0000', scale: 3.0, spectralType: 'M5III' },
+            { name: 'planetaryNebula', duration: 50, color: '#87CEEB', scale: 0.1, spectralType: 'O' },
+            { name: 'whiteDwarf', duration: 1, color: '#ADD8E6', scale: 0.01, spectralType: 'DA' }
+          ];
+
+          this.currentPhaseIndex = 0;
+          this.currentPhaseStartTime = 0;
+          this.updateStarVisuals(this.evolutionPhases[0]);
+
+          this.spectralText = document.createElement('a-entity');
+          this.spectralText.setAttribute('text', {
+            value: `Spectral Type: ${this.evolutionPhases[0].spectralType}`,
+            color: 'white',
+            align: 'center',
+            wrapCount: 20
+          });
+          this.spectralText.setAttribute('position', '0 0.7 0');
+          this.el.appendChild(this.spectralText);
+        },
+
+        tick: function(time, deltaTime) {
+          this.evolutionTime += deltaTime * this.data.evolutionSpeed;
+
+          let currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+
+          if (this.evolutionTime - this.currentPhaseStartTime > currentPhase.duration) {
+            this.currentPhaseIndex++;
+            this.currentPhaseStartTime = this.evolutionTime;
+
+            if (this.currentPhaseIndex >= this.evolutionPhases.length) {
+              this.currentPhaseIndex = 0;
+              this.evolutionTime = 0;
+              this.currentPhaseStartTime = 0;
+            }
+            currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+          }
+
+          this.updateStarVisuals(currentPhase);
+        },
+
+        updateStarVisuals: function(phase) {
+          this.star.setAttribute('radius', phase.scale * 0.5);
+
+          this.star.setAttribute('material', `color: ${phase.color}; emissive: ${phase.color}; emissiveIntensity: 1;`);
+          
+          this.spectralText.setAttribute('text', 'value', `Spectral Type: ${phase.spectralType}`);
+        }
+      });
+
+      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starSize = 0.01) {
+        const scene = document.querySelector('a-scene');
+        if (!scene) {
+          console.error('A-Frame scene not found.');
+          return;
+        }
+
+        const starsContainer = document.createElement('a-entity');
+        starsContainer.setAttribute('id', 'background-stars');
+        scene.appendChild(starsContainer);
+
+        for (let i = 0; i < numStars; i++) {
+          const star = document.createElement('a-sphere');
+          star.setAttribute('radius', starSize * (0.5 + Math.random()));
+          star.setAttribute('color', '#FFFFFF');
+          star.setAttribute('material', 'shader: flat; emissive: #FFFFFF; emissiveIntensity: 0.5;');
+
+          let x, y, z;
+          let distance;
+          do {
+            x = (Math.random() * 2 - 1) * maxDistance;
+            y = (Math.random() * 2 - 1) * maxDistance;
+            z = (Math.random() * 2 - 1) * maxDistance;
+            distance = Math.sqrt(x*x + y*y + z*z);
+          } while (distance < minDistance || distance > maxDistance);
+
+          star.setAttribute('position', `${x} ${y} ${z}`);
+          starsContainer.appendChild(star);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const scene = document.querySelector('a-scene');
+        if (scene) {
+          scene.addEventListener('loaded', function() {
+            generateBackgroundStars();
+          });
+        }
+      });
     </script>
 
     <a-scene webxr="optionalAR: true;">
       <a-camera position="0 0 5" look-controls wasd-controls far="100"></a-camera>
 
       <a-assets>
-        <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
         <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
         <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
         <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
@@ -142,10 +246,11 @@
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
-        <a-entity gltf-model="#sun-model"
+        <a-sphere radius="0.5"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
+                  material="color: #FFFACD; emissive: #FFFACD; emissiveIntensity: 1;"
+                  star-evolution="evolutionSpeed: 0.0001;">
+        </a-sphere>
 
         <a-entity gltf-model="#mercury-model"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
@@ -163,7 +268,7 @@
                 <a-entity id="moon-orbit"
                           animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
                     <a-entity gltf-model="#moon-model"
-                              position="0.1 0 0" scale="0.01 0.01 0.01">
+                              position="0.05 0 0" scale="0.1 0.1 0.1">
                         <a-animation attribute="rotation"
                                      from="0 0 0"
                                      to="0 360 0"
