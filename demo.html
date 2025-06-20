@@ -254,15 +254,9 @@
             return;
           }
           this.updatePosition = this.updatePosition.bind(this);
-          // Changed: attaching to camera's object3D, which means position is local to camera
           this.cameraEl.object3D.add(this.el.object3D); 
           this.updatePosition();
         },
-        // We only need to update if alignment or distance changes, or if camera moves independently.
-        // For static panel, init update is enough.
-        // tick: function() {
-        //     this.updatePosition(); 
-        // },
         updatePosition: function() {
           const data = this.data;
           let x = 0, y = 0, z = -data.distance; 
@@ -272,10 +266,8 @@
                 x = 0; y = 0;
                 break;
             case 'top-left':
-                // Adjust these values based on the panel's own width/height after scaling
-                // (width/height of plane is 3x1.5, scale 0.8 makes it 2.4x1.2)
-                x = -0.8; // Move left
-                y = 0.5;  // Move up
+                x = -0.8; 
+                y = 0.5;  
                 break;
             case 'top-right':
                 x = 0.8;
@@ -300,10 +292,13 @@
 
 
       AFRAME.registerComponent('info-panel', {
+        schema: {
+            targetType: {type: 'string', default: 'star'} // 'star' або 'planet'
+        },
         init: function() {
-          this.nameText = document.getElementById('info-panel-name');
-          this.classificationText = document.getElementById('info-panel-classification');
-          this.typeText = document.getElementById('info-panel-type');
+          this.nameText = this.el.querySelector('.info-panel-name');
+          this.classificationText = this.el.querySelector('.info-panel-classification');
+          this.typeText = this.el.querySelector('.info-panel-type');
 
           this.allObjects = document.querySelectorAll('[planet]');
           this.camera = document.querySelector('a-camera');
@@ -333,7 +328,14 @@
           let minDistance = Infinity;
           const cameraPosition = this.camera.object3D.position;
 
-          this.allObjects.forEach(obj => {
+          // Фільтруємо об'єкти за targetType
+          const filteredObjects = Array.from(this.allObjects).filter(obj => {
+              const planetData = obj.getAttribute('planet');
+              if (!planetData) return false;
+              return this.data.targetType === 'star' ? planetData.type === 'star' : planetData.type !== 'star';
+          });
+
+          filteredObjects.forEach(obj => {
             if (!obj.object3D) return;
 
             const objPosition = new THREE.Vector3().setFromMatrixPosition(obj.object3D.matrixWorld);
@@ -429,14 +431,11 @@
                   originalRadius: currentStarSize
               });
             }
-            // Повернено атрибут 'planet' для фонових зірок
             star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: 1.989e30; dist: ${distance}`); 
 
             starsContainer.appendChild(star);
 
           } catch (e) {
-             console.error("Помилка при генерації фонової зірки:", e);
-             break;
           }
         }
       }
@@ -485,11 +484,28 @@
         <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
       </a-assets>
 
-      <a-entity camera-relative="alignment: top-left; distance: 2.5" info-panel="" scale="0.8 0.8 0.8"> <a-plane color="#333" width="3" height="1.5" position="0 0 -0.01" opacity="0.8"></a-plane>
-          <a-text id="info-panel-name" value="Назва: ---" position="-1.4 0.5 0"
-                  align="left" color="white" width="2.8" wrap-count="20"></a-text> <a-text id="info-panel-classification" value="Клас: ---" position="-1.4 0.1 0"
-                  align="left" color="white" width="2.8" wrap-count="20"></a-text> <a-text id="info-panel-type" value="Тип: ---" position="-1.4 -0.3 0"
-                  align="left" color="white" width="2.8" wrap-count="20"></a-text> </a-entity>
+      <a-entity camera-relative="alignment: top-left; distance: 2.5" info-panel="targetType: star" scale="0.8 0.8 0.8">
+          <a-plane color="#333" width="3" height="1.5" position="0 0 -0.01" opacity="0.8"></a-plane>
+          <a-text value="--- Зірка ---" position="0 0.65 0" align="center" color="#FFD700" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-name" value="Назва: ---" position="-1.4 0.35 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-classification" value="Клас: ---" position="-1.4 0.05 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-type" value="Тип: ---" position="-1.4 -0.25 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+      </a-entity>
+
+      <a-entity camera-relative="alignment: top-right; distance: 2.5" info-panel="targetType: planet" scale="0.8 0.8 0.8">
+          <a-plane color="#333" width="3" height="1.5" position="0 0 -0.01" opacity="0.8"></a-plane>
+          <a-text value="--- Планета ---" position="0 0.65 0" align="center" color="#ADD8E6" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-name" value="Назва: ---" position="-1.4 0.35 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-classification" value="Деталі: ---" position="-1.4 0.05 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+          <a-text class="info-panel-type" value="Тип: ---" position="-1.4 -0.25 0"
+                  align="left" color="white" width="2.8" wrap-count="20"></a-text>
+      </a-entity>
+
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
