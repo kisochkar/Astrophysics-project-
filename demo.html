@@ -56,14 +56,24 @@
         },
 
         init: function () {
+          this.labelEl = this.el.querySelector(`#${this.el.id}-label`);
+
           if (this.data.type === 'star') {
               this.spectralClass = this.assignSpectralClass();
               this.luminosityClass = "V";
               this.temperature = this.calculateTemperature(this.spectralClass);
+              const classificationText = `${this.data.name}: ${this.spectralClass}${this.luminosityClass} (${this.temperature}K)`;
               console.log(`[Еволюція Зірок] Зірка ${this.data.name} (ID: ${this.el.id || this.el.object3D.uuid}) ініціалізована. Класифікація: ${this.spectralClass}${this.luminosityClass} (Температура: ${this.temperature}K)`);
+              if (this.labelEl) {
+                  this.labelEl.setAttribute('value', classificationText);
+              }
           } else {
               this.planetTypeDetail = this.getPlanetTypeDetail(this.data.type);
+              const classificationText = `${this.data.name}: ${this.planetTypeDetail}`;
               console.log(`[Відкриття Планет] Планета ${this.data.name} (ID: ${this.el.id || this.el.object3D.uuid}) ініціалізована. Тип: ${this.planetTypeDetail}`);
+              if (this.labelEl) {
+                  this.labelEl.setAttribute('value', classificationText);
+              }
           }
 
           if (this.data.T > 0) {
@@ -186,6 +196,9 @@
           this.star = this.el;
           this.initialRadius = this.data.originalRadius;
 
+          this.labelEl = this.el.querySelector(`#${this.el.id}-label`);
+
+
           this.evolutionPhases = [
             { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V', description: 'Зірка головної послідовності' },
             { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III', description: 'Червоний гігант' },
@@ -197,7 +210,11 @@
           this.currentPhaseStartTime = this.evolutionTime - (this.evolutionTime % this.evolutionPhases[0].duration);
 
           this.updateStarVisuals(this.evolutionPhases[this.currentPhaseIndex]);
+          const initialClassificationText = `${this.evolutionPhases[this.currentPhaseIndex].spectralType} (${this.evolutionPhases[this.currentPhaseIndex].description})`;
           console.log(`[Еволюція Зірок] Зірка ${this.star.id || this.star.object3D.uuid} ініціалізована. Початкова фаза: ${this.evolutionPhases[this.currentPhaseIndex].name}. Класифікація: ${this.evolutionPhases[this.currentPhaseIndex].spectralType} (${this.evolutionPhases[this.currentPhaseIndex].description})`);
+          if (this.labelEl) {
+              this.labelEl.setAttribute('value', initialClassificationText);
+          }
         },
 
         tick: function(time, deltaTime) {
@@ -215,7 +232,11 @@
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+            const newClassificationText = `${currentPhase.spectralType} (${currentPhase.description})`;
             console.log(`[Еволюція Зірок] Зірка ${this.star.id || this.star.object3D.uuid} переходить до фази: ${currentPhase.name}. Класифікація: ${currentPhase.spectralType} (${currentPhase.description}). Час: ${this.evolutionTime.toFixed(0)}`);
+            if (this.labelEl) {
+                this.labelEl.setAttribute('value', newClassificationText);
+            }
           }
 
           this.updateStarVisuals(currentPhase);
@@ -234,6 +255,7 @@
       function generateBackgroundStars(numStars = 500, maxDistance = 50, minDistance = 10, starBaseSize = 0.2, evolveStars = true) {
         const scene = document.querySelector('a-scene');
         if (!scene) {
+          console.error("Сцена A-Frame не знайдена.");
           return;
         }
 
@@ -244,7 +266,8 @@
         for (let i = 0; i < numStars; i++) {
           try {
             const star = document.createElement('a-sphere');
-            star.setAttribute('id', `star-${generateUUID()}`);
+            const starId = `star-${generateUUID()}`;
+            star.setAttribute('id', starId);
 
             const currentStarSize = starBaseSize * (0.5 + Math.random());
             
@@ -263,6 +286,17 @@
 
             star.setAttribute('position', `${x} ${y} ${z}`);
             
+            const starLabel = document.createElement('a-text');
+            starLabel.setAttribute('id', `${starId}-label`);
+            starLabel.setAttribute('value', 'Завантаження...');
+            starLabel.setAttribute('position', `0 ${currentStarSize + 0.1} 0`);
+            starLabel.setAttribute('align', 'center');
+            starLabel.setAttribute('color', 'lightgray');
+            starLabel.setAttribute('width', 0.5);
+            starLabel.setAttribute('rotation', '-90 0 0');
+            star.appendChild(starLabel);
+
+
             if (evolveStars) {
               star.setAttribute('star-evolution-effect', {
                   evolutionSpeed: 0.0005 * (0.5 + Math.random()),
@@ -273,6 +307,7 @@
             starsContainer.appendChild(star);
 
           } catch (e) {
+             console.error("Помилка при генерації фонової зірки:", e);
              break;
           }
         }
@@ -336,21 +371,29 @@
         <a-entity gltf-model="#sun-model" id="sun-entity"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun; type: star"
                   scale="0.5 0.5 0.5">
+            <a-text id="sun-entity-label" value="Сонце: Завантаження..." position="0 0.7 0"
+                    align="center" color="white" width="2" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#mercury-model" id="mercury-entity"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury; type: terrestrial"
                   scale="0.05 0.05 0.05">
+            <a-text id="mercury-entity-label" value="Меркурій: Завантаження..." position="0 0.08 0"
+                    align="center" color="white" width="1" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#venus-model" id="venus-entity"
                   planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus; type: terrestrial"
                   scale="0.08 0.08 0.08">
+            <a-text id="venus-entity-label" value="Венера: Завантаження..." position="0 0.12 0"
+                    align="center" color="white" width="1" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity id="earth-orbit-anchor"
                   planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth; type: terrestrial">
             <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1">
+                <a-text id="earth-orbit-anchor-label" value="Земля: Завантаження..." position="0 0.2 0"
+                        align="center" color="white" width="1" rotation="-90 0 0"></a-text>
                 <a-entity id="moon-orbit"
                           animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
                     <a-entity gltf-model="#moon-model"
@@ -370,26 +413,36 @@
         <a-entity gltf-model="#mars-model" id="mars-entity"
                   planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars; type: terrestrial"
                   scale="0.06 0.06 0.06">
+            <a-text id="mars-entity-label" value="Марс: Завантаження..." position="0 0.1 0"
+                    align="center" color="white" width="1" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#jupiter-model" id="jupiter-entity"
                   planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter; type: gasGiant"
                   scale="0.5 0.5 0.5">
+            <a-text id="jupiter-entity-label" value="Юпітер: Завантаження..." position="0 0.7 0"
+                    align="center" color="white" width="2" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#saturn-model" id="saturn-entity"
                   planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn; type: gasGiant"
                   scale="0.4 0.4 0.4">
+            <a-text id="saturn-entity-label" value="Сатурн: Завантаження..." position="0 0.6 0"
+                    align="center" color="white" width="2" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#uranus-model" id="uranus-entity"
                   planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus; type: iceGiant"
                   scale="0.3 0.3 0.3">
+            <a-text id="uranus-entity-label" value="Уран: Завантаження..." position="0 0.5 0"
+                    align="center" color="white" width="2" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity gltf-model="#neptune-model" id="neptune-entity"
                   planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune; type: iceGiant"
                   scale="0.3 0.3 0.3">
+            <a-text id="neptune-entity-label" value="Нептун: Завантаження..." position="0 0.5 0"
+                    align="center" color="white" width="2" rotation="-90 0 0"></a-text>
         </a-entity>
 
         <a-entity main></a-entity>
