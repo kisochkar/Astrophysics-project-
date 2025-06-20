@@ -1,326 +1,313 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Астрофізичний AR-симулятор: Демо</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      #ar-button {
-          position: fixed;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 9999;
-          padding: 15px 30px;
-          background: #667eea;
-          color: white;
-          text-decoration: none;
-          border-radius: 25px;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          font-size: 1.2rem;
-          cursor: pointer;
-          border: none;
-          outline: none;
-          transition: background 0.3s ease;
-      }
-      #ar-button:hover {
-          background: #5a67d8;
-      }
-    </style>
-  </head>
-  <body>
-    <script>
-      const day = 24.0 * 60 * 60;
-      const G = 6.67e-11;
-      const K = 5e10;
+  <head>
+    <meta charset="utf-8">
+    <title>Астрофізичний AR-симулятор: Демо</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #ar-button {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9999;
+          padding: 15px 30px;
+          background: #667eea;
+          color: white;
+          text-decoration: none;
+          border-radius: 25px;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-size: 1.2rem;
+          cursor: pointer;
+          border: none;
+          outline: none;
+          transition: background 0.3s ease;
+      }
+      #ar-button:hover {
+          background: #5a67d8;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const day = 24.0 * 60 * 60;
+      const G = 6.67e-11;
+      const K = 5e10;
 
-      AFRAME.registerComponent('planet', {
-        schema: {
-          name: {type: 'string', default: ""},
-          dist: {type: 'number', default: 0},
-          mass: {type: 'number', default: 0},
-          T: {type: 'number', default: 0},
-          v: {type: 'array', default: [0,0,0]},
-          a: {type: 'array', default: [0,0,0]},
-          pos: {type: 'array', default: [0,0,0]}
-        },
+      AFRAME.registerComponent('planet', {
+        schema: {
+          name: {type: 'string', default: ""},
+          dist: {type: 'number', default: 0},
+          mass: {type: 'number', default: 0},
+          T: {type: 'number', default: 0},
+          v: {type: 'array', default: [0,0,0]},
+          a: {type: 'array', default: [0,0,0]},
+          pos: {type: 'array', default: [0,0,0]}
+        },
 
-        init: function () {
-          if (this.data.T > 0) {
-            this.data.pos[0] = this.data.dist;
-            const centralMass = 1.989e30;
-            this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
-          } else {
-            this.data.pos = [0, 0, 0];
-            this.data.v = [0, 0, 0];
-          }
-          this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
-        }
-      });
+        init: function () {
+          if (this.data.T > 0) {
+            this.data.pos[0] = this.data.dist;
+            const centralMass = 1.989e30;
+            this.data.v[1] = Math.sqrt((G * centralMass) / this.data.dist);
+          } else {
+            this.data.pos = [0, 0, 0];
+            this.data.v = [0, 0, 0];
+          }
+          this.el.setAttribute('position', `${this.data.pos[0]/K} ${this.data.pos[1]/K} ${this.data.pos[2]/K}`);
+        }
+      });
 
-      AFRAME.registerComponent('main', {
-        init: function() {
-          this.solar_system = document.querySelectorAll('[planet]');
-          this.simulation_paused = false;
-        },
+      AFRAME.registerComponent('main', {
+        init: function() {
+          this.solar_system = document.querySelectorAll('[planet]');
+          this.simulation_paused = false;
+        },
 
-        tick: function (time, deltaTime) {
-          if (this.simulation_paused) return;
+        tick: function (time, deltaTime) {
+          if (this.simulation_paused) return;
 
-          const dt = day * 0.1;
+          const dt = day * 0.1;
 
-          for (var i = 0; i < this.solar_system.length; i++) {
-            let planet_i_el = this.solar_system[i];
-            let planet_i = planet_i_el.getAttribute('planet');
+          for (var i = 0; i < this.solar_system.length; i++) {
+            let planet_i_el = this.solar_system[i];
+            let planet_i = planet_i_el.getAttribute('planet');
 
-            if (!planet_i) continue;
+            if (!planet_i) continue;
 
-            planet_i.a = [0, 0, 0];
+            planet_i.a = [0, 0, 0];
 
-            for (var j = 0; j < this.solar_system.length; j++) {
-              if (i === j) continue;
+            for (var j = 0; j < this.solar_system.length; j++) {
+              if (i === j) continue;
 
-              let planet_j_el = this.solar_system[j];
-              let planet_j = planet_j_el.getAttribute('planet');
+              let planet_j_el = this.solar_system[j];
+              let planet_j = planet_j_el.getAttribute('planet');
 
-              if (!planet_j) continue;
+              if (!planet_j) continue;
 
-              let deltapos = [
-                planet_j.pos[0] - planet_i.pos[0],
-                planet_j.pos[1] - planet_i.pos[1],
-                planet_j.pos[2] - planet_i.pos[2]
-              ];
+              let deltapos = [
+                planet_j.pos[0] - planet_i.pos[0],
+                planet_j.pos[1] - planet_i.pos[1],
+                planet_j.pos[2] - planet_i.pos[2]
+              ];
 
-              let r = Math.sqrt(
-                Math.pow(deltapos[0], 2) +
-                Math.pow(deltapos[1], 2) +
-                Math.pow(deltapos[2], 2)
-              );
+              let r = Math.sqrt(
+                Math.pow(deltapos[0], 2) +
+                Math.pow(deltapos[1], 2) +
+                Math.pow(deltapos[2], 2)
+              );
 
-              if (r < 1e7) r = 1e7;
+              if (r < 1e7) r = 1e7;
 
-              for (var k = 0; k < 3; k++) {
-                planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
-              }
-            }
+              for (var k = 0; k < 3; k++) {
+                planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
+              }
+            }
 
-            for (var k = 0; k < 3; k++) {
-              planet_i.v[k] += planet_i.a[k] * dt;
-            }
+            for (var k = 0; k < 3; k++) {
+              planet_i.v[k] += planet_i.a[k] * dt;
+            }
 
-            for (var k = 0; k < 3; k++) {
-              planet_i.pos[k] += planet_i.v[k] * dt;
-            }
+            for (var k = 0; k < 3; k++) {
+              planet_i.pos[k] += planet_i.v[k] * dt;
+            }
 
-            this.solar_system[i].setAttribute('position',
-              `${planet_i.pos[0]/K} ${planet_i.pos[1]/K} ${planet_i.pos[2]/K}`
-            );
+            this.solar_system[i].setAttribute('position',
+              `${planet_i.pos[0]/K} ${planet_i.pos[1]/K} ${planet_i.pos[2]/K}`
+            );
 
-            planet_i_el.setAttribute('planet', planet_i);
-          }
-        }
-      });
+            planet_i_el.setAttribute('planet', planet_i);
+          }
+        }
+      });
 
-      AFRAME.registerComponent('star-evolution-effect', {
-        schema: {
-          evolutionSpeed: {type: 'number', default: 0.0001},
-          initialPhase: {type: 'string', default: 'mainSequence'},
-          originalRadius: {type: 'number', default: 0.01}
-        },
+      AFRAME.registerComponent('star-evolution-effect', {
+        schema: {
+          evolutionSpeed: {type: 'number', default: 0.0001},
+          initialPhase: {type: 'string', default: 'mainSequence'},
+          originalRadius: {type: 'number', default: 0.01}
+        },
 
-        init: function() {
-          this.evolutionTime = Math.random() * 2000;
-          this.star = this.el;
-          this.initialRadius = this.data.originalRadius;
+        init: function() {
+          this.evolutionTime = Math.random() * 2000;
+          this.star = this.el;
+          this.initialRadius = this.data.originalRadius;
 
-          this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
-            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
-            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' }
-          ];
+          this.evolutionPhases = [
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' }
+          ];
 
-          this.currentPhaseIndex = 0;
-          this.currentPhaseStartTime = this.evolutionTime;
-          this.updateStarVisuals(this.evolutionPhases[0]);
-        },
+          this.currentPhaseIndex = 0;
+          this.currentPhaseStartTime = this.evolutionTime;
+          this.updateStarVisuals(this.evolutionPhases[0]);
+        },
 
-        tick: function(time, deltaTime) {
-          this.evolutionTime += deltaTime * this.data.evolutionSpeed;
+        tick: function(time, deltaTime) {
+          this.evolutionTime += deltaTime * this.data.evolutionSpeed;
 
-          let currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+          let currentPhase = this.evolutionPhases[this.currentPhaseIndex];
 
-          if (this.evolutionTime - this.currentPhaseStartTime > currentPhase.duration) {
-            this.currentPhaseIndex++;
-            this.currentPhaseStartTime = this.evolutionTime;
+          if (this.evolutionTime - this.currentPhaseStartTime > currentPhase.duration) {
+            this.currentPhaseIndex++;
+            this.currentPhaseStartTime = this.evolutionTime;
 
-            if (this.currentPhaseIndex >= this.evolutionPhases.length) {
-              this.currentPhaseIndex = 0;
-              this.evolutionTime = 0;
-              this.currentPhaseStartTime = 0;
-            }
-            currentPhase = this.evolutionPhases[this.currentPhaseIndex];
-          }
+            if (this.currentPhaseIndex >= this.evolutionPhases.length) {
+              this.currentPhaseIndex = 0;
+              this.evolutionTime = 0;
+              this.currentPhaseStartTime = 0;
+            }
+            currentPhase = this.evolutionPhases[this.currentPhaseIndex];
+          }
 
-          this.updateStarVisuals(currentPhase);
-        },
+          this.updateStarVisuals(currentPhase);
+        },
 
-        updateStarVisuals: function(phase) {
-          this.star.setAttribute('radius', this.initialRadius * phase.scaleFactor);
-          this.star.setAttribute('material', `shader: standard; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
-        }
-      });
+        updateStarVisuals: function(phase) {
+          this.star.setAttribute('radius', this.initialRadius * phase.scaleFactor);
+         this.star.setAttribute('material', `shader: standard; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
+        }
+      });
 
-      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
-        console.log('Початок генерації фонових зірок. numStars:', numStars);
-        const scene = document.querySelector('a-scene');
-        if (!scene) {
-          console.error('A-Frame scene not found.');
-          return;
-        }
+      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
+        const scene = document.querySelector('a-scene');
+        if (!scene) {
+          console.error('A-Frame scene not found.');
+          return;
+        }
 
-        const starsContainer = document.createElement('a-entity');
-        starsContainer.setAttribute('id', 'background-stars');
-        scene.appendChild(starsContainer);
-        console.log('Контейнер для зірок додано до сцени:', starsContainer);
+        const starsContainer = document.createElement('a-entity');
+        starsContainer.setAttribute('id', 'background-stars');
+        scene.appendChild(starsContainer);
 
-        for (let i = 0; i < numStars; i++) {
-          try {
-            console.log(`Створюємо зірку №${i}...`);
+        for (let i = 0; i < numStars; i++) {
+          const star = document.createElement('a-sphere');
+          const currentStarSize = starBaseSize * (0.5 + Math.random());
+          star.setAttribute('radius', currentStarSize);
+          star.setAttribute('color', '#FFFFFF');
+          star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 0.5;');
 
-            const star = document.createElement('a-sphere');
-            const currentStarSize = 100; // Тимчасово великий радіус для діагностики
-            star.setAttribute('radius', currentStarSize);
-            star.setAttribute('color', '#FFFFFF');
-            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 0.5;');
+          let x, y, z;
+          let distance;
+          do {
+            x = (Math.random() * 2 - 1) * maxDistance;
+            y = (Math.random() * 2 - 1) * maxDistance;
+            z = (Math.random() * 2 - 1) * maxDistance;
+            distance = Math.sqrt(x*x + y*y + z*z);
+          } while (distance < minDistance || distance > maxDistance);
 
-            let x, y, z;
-            let distance;
-            do {
-              x = (Math.random() * 2 - 1) * maxDistance;
-              y = (Math.random() * 2 - 1) * maxDistance;
-              z = (Math.random() * 2 - 1) * maxDistance;
-              distance = Math.sqrt(x*x + y*y + z*z);
-            } while (distance < minDistance || distance > maxDistance);
+          star.setAttribute('position', `${x} ${y} ${z}`);
+          
+          if (evolveStars) {
+            star.setAttribute('star-evolution-effect', {
+                evolutionSpeed: 0.0001 * (0.5 + Math.random()),
+                originalRadius: currentStarSize
+            });
+          }
 
-            star.setAttribute('position', `${x} ${y} ${z}`);
-            
-            if (evolveStars) {
-              star.setAttribute('star-evolution-effect', {
-                  evolutionSpeed: 0.0001 * (0.5 + Math.random()),
-                  originalRadius: currentStarSize
-              });
-            }
+          starsContainer.appendChild(star);
+        }
+      }
 
-            starsContainer.appendChild(star);
-            console.log(`Зірка №${i} додана.`);
+      document.addEventListener('DOMContentLoaded', function() {
+        const scene = document.querySelector('a-scene');
+        if (scene) {
+          scene.addEventListener('loaded', function() {
+            generateBackgroundStars(500, 200, 50, 0.01, true); 
+          });
+        }
+      });
+    </script>
 
-          } catch (e) {
-            console.error(`Помилка при створенні зірки №${i}:`, e);
-            break; // Припиняємо цикл, якщо виникла помилка
-          }
-        }
-        console.log(`Генерація зірок завершена (або перервана). Очікувалося ${numStars} зірок.`);
-      }
+    <a-scene webxr="optionalAR: true;">
+      <a-camera position="0 0 5" look-controls wasd-controls far="1000"></a-camera>
 
-      document.addEventListener('DOMContentLoaded', function() {
-        const scene = document.querySelector('a-scene');
-        if (scene) {
-          scene.addEventListener('loaded', function() {
-            console.log('Сцена A-Frame завантажена. Спроба генерації зірок...');
-            generateBackgroundStars(500, 200, 50, 0.01, true); 
-          });
-        }
-      });
-    </script>
+      <a-assets>
+        <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
+        <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
+        <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
+        <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
+        <a-asset-item id="moon-model" src="./assets/models/moon.glb"></a-asset-item>
+        <a-asset-item id="mars-model" src="./assets/models/mars.glb"></a-asset-item>
+        <a-asset-item id="jupiter-model" src="./assets/models/jupiter.glb"></a-asset-item>
+        <a-asset-item id="saturn-model" src="./assets/models/saturno.glb"></a-asset-item>
+        <a-asset-item id="uranus-model" src="./assets/models/uranus.glb"></a-asset-item>
+        <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
+      </a-assets>
 
-    <a-scene webxr="optionalAR: true;">
-      <a-camera position="0 0 5" look-controls wasd-controls far="1000"></a-camera>
+      <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
-      <a-assets>
-        <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
-        <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
-        <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
-        <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
-        <a-asset-item id="moon-model" src="./assets/models/moon.glb"></a-asset-item>
-        <a-asset-item id="mars-model" src="./assets/models/mars.glb"></a-asset-item>
-        <a-asset-item id="jupiter-model" src="./assets/models/jupiter.glb"></a-asset-item>
-        <a-asset-item id="saturn-model" src="./assets/models/saturno.glb"></a-asset-item>
-        <a-asset-item id="uranus-model" src="./assets/models/uranus.glb"></a-asset-item>
-        <a-asset-item id="neptune-model" src="./assets/models/neptuno.glb"></a-asset-item>
-      </a-assets>
+        <a-entity gltf-model="#sun-model"
+                  planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
+                  scale="0.5 0.5 0.5">
+        </a-entity>
 
-      <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
+        <a-entity gltf-model="#mercury-model"
+                  planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
+                  scale="0.05 0.05 0.05">
+        </a-entity>
 
-        <a-entity gltf-model="#sun-model"
-                  planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
+        <a-entity gltf-model="#venus-model"
+                  planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
+                  scale="0.08 0.08 0.08">
+        </a-entity>
 
-        <a-entity gltf-model="#mercury-model"
-                  planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
-                  scale="0.05 0.05 0.05">
-        </a-entity>
+        <a-entity id="earth-orbit-anchor"
+                  planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
+            <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1">
+                <a-entity id="moon-orbit"
+                          animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
+                    <a-entity gltf-model="#moon-model"
+                              position="0.05 0 0" scale="0.1 0.1 0.1">
+                        <a-animation attribute="rotation"
+                                     from="0 0 0"
+                                     to="0 360 0"
+                                     dur="2700"
+                                     easing="linear"
+                                     repeat="indefinite">
+                        </a-animation>
+                    </a-entity>
+                </a-entity>
+            </a-entity>
+        </a-entity>
 
-        <a-entity gltf-model="#venus-model"
-                  planet="dist: 108.2e9; mass: 4.876e24; T: 224.7; name: Venus"
-                  scale="0.08 0.08 0.08">
-        </a-entity>
+        <a-entity gltf-model="#mars-model"
+                  planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
+                  scale="0.06 0.06 0.06">
+        </a-entity>
 
-        <a-entity id="earth-orbit-anchor"
-                  planet="dist: 149.6e9; mass: 6e24; T: 365; name: Earth">
-            <a-entity gltf-model="#earth-model" scale="0.1 0.1 0.1">
-                <a-entity id="moon-orbit"
-                          animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
-                    <a-entity gltf-model="#moon-model"
-                              position="0.05 0 0" scale="0.1 0.1 0.1">
-                        <a-animation attribute="rotation"
-                                     from="0 0 0"
-                                     to="0 360 0"
-                                     dur="2700"
-                                     easing="linear"
-                                     repeat="indefinite">
-                        </a-animation>
-                    </a-entity>
-                </a-entity>
-            </a-entity>
-        </a-entity>
+        <a-entity gltf-model="#jupiter-model"
+                  planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
+                  scale="0.5 0.5 0.5">
+        </a-entity>
 
-        <a-entity gltf-model="#mars-model"
-                  planet="dist: 227.9e9; mass: 6.39e23; T: 687; name: Mars"
-                  scale="0.06 0.06 0.06">
-        </a-entity>
+        <a-entity gltf-model="#saturn-model"
+                  planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
+                  scale="0.4 0.4 0.4">
+        </a-entity>
 
-        <a-entity gltf-model="#jupiter-model"
-                  planet="dist: 778.5e9; mass: 1.898e27; T: 4330; name: Jupiter"
-                  scale="0.5 0.5 0.5">
-        </a-entity>
+        <a-entity gltf-model="#uranus-model"
+                  planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
+                  scale="0.3 0.3 0.3">
+        </a-entity>
 
-        <a-entity gltf-model="#saturn-model"
-                  planet="dist: 1433.5e9; mass: 5.683e26; T: 10756; name: Saturn"
-                  scale="0.4 0.4 0.4">
-        </a-entity>
+        <a-entity gltf-model="#neptune-model"
+                  planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
+                  scale="0.3 0.3 0.3">
+        </a-entity>
 
-        <a-entity gltf-model="#uranus-model"
-                  planet="dist: 2877.3e9; mass: 8.681e25; T: 30687; name: Uranus"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
+        <a-entity main></a-entity>
 
-        <a-entity gltf-model="#neptune-model"
-                  planet="dist: 4498.4e9; mass: 1.024e26; T: 60190; name: Neptune"
-                  scale="0.3 0.3 0.3">
-        </a-entity>
+      </a-entity>
 
-        <a-entity main></a-entity>
+      <a-light type="ambient" color="#BBB"></a-light>
+      <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
 
-      </a-entity>
-
-      <a-light type="ambient" color="#BBB"></a-light>
-      <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
-
-      <a-sky color="black"></a-sky>
-    </a-scene>
-  </body>
-</html>
+      <a-sky color="black"></a-sky>
+    </a-scene>
+  </body>
+</html> 
