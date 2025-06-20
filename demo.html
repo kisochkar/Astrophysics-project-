@@ -36,6 +36,7 @@
       const G = 6.67e-11;
       const K = 5e10;
 
+      // Функція для генерації унікальних ID
       function generateUUID() {
           return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
               var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -53,7 +54,7 @@
           a: {type: 'array', default: [0,0,0]},
           pos: {type: 'array', default: [0,0,0]},
           type: {type: 'string', default: "unknown"},
-          spectralType: {type: 'string', default: ""}
+          spectralType: {type: 'string', default: ""} // Додано spectralType до схеми
         },
 
         init: function () {
@@ -74,9 +75,11 @@
           this.solar_system = document.querySelectorAll('[planet]');
           this.simulation_paused = false;
 
+          // Додаємо обробник подій для паузи/відновлення симуляції
           document.addEventListener('keydown', (event) => {
               if (event.key === 'p' || event.key === 'P') {
                   this.simulation_paused = !this.simulation_paused;
+                  console.log(`Симуляція ${this.simulation_paused ? 'призупинена' : 'відновлена'}.`);
               }
           });
         },
@@ -92,11 +95,13 @@
 
             if (!planet_i) continue;
 
+            // Обробка зірок у центрі (якщо це Сонце)
             if (planet_i.type === 'star' && planet_i.dist === 0) {
+                // Зберігаємо положення і швидкість центральної зірки (Сонця) на нулі
                 planet_i.pos = [0, 0, 0];
                 planet_i.v = [0, 0, 0];
-                planet_i_el.setAttribute('position', '0 0 0');
-                continue;
+                planet_i_el.setAttribute('position', '0 0 0'); // Забезпечуємо, що Сонце залишається на місці
+                continue; // Пропускаємо гравітаційний розрахунок для центральної зірки
             }
 
             planet_i.a = [0, 0, 0];
@@ -121,7 +126,7 @@
                 Math.pow(deltapos[2], 2)
               );
 
-              if (r < 1e7) r = 1e7;
+              if (r < 1e7) r = 1e7; // Запобігаємо діленню на нуль або дуже малі значення
 
               for (var k = 0; k < 3; k++) {
                 planet_i.a[k] += G * planet_j.mass * deltapos[k] / Math.pow(r, 3);
@@ -157,10 +162,10 @@
           this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Звичайна зірка' }, 
-            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, description: 'Червоний гігант' },
-            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, description: 'Білий карлик' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, description: 'Наднова' }
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, description: 'Звичайна зірка', spectralType: 'G2V' }, // Додано spectralType
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, description: 'Червоний гігант', spectralType: 'M0III' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, description: 'Білий карлик', spectralType: 'DA' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, description: 'Наднова', spectralType: 'II' }
           ];
 
           this.currentPhaseIndex = 0;
@@ -196,9 +201,17 @@
 
           this.star.setAttribute('radius', newRadius);
           this.star.setAttribute('material', `shader: standard; emissive: ${newColor}; emissiveIntensity: ${emissiveIntensity};`);
+          
+          // Оновлюємо spectralType в компоненті planet
+          const currentPlanetData = this.star.getAttribute('planet');
+          if (currentPlanetData) {
+              currentPlanetData.spectralType = phase.spectralType;
+              this.star.setAttribute('planet', currentPlanetData);
+          }
         }
       });
 
+      // Новий компонент для розміщення елементів відносно камери
       AFRAME.registerComponent('camera-relative', {
         schema: {
           position: {type: 'string', default: '0 0 -1'},
@@ -212,6 +225,7 @@
             return;
           }
           this.updatePosition = this.updatePosition.bind(this);
+          // Приєднуємо елемент до об'єкта 3D камери
           this.cameraEl.object3D.add(this.el.object3D); 
           this.el.setAttribute('visible', 'true');
           this.updatePosition();
@@ -225,8 +239,8 @@
                 x = 0; y = 0;
                 break;
             case 'top-left':
-                x = -1.2;
-                y = 0.7;
+                x = -1.2; // Відкориговано для більшої видимості
+                y = 0.7; // Відкориговано для більшої видимості
                 break;
             case 'top-right':
                 x = 1.2;
@@ -250,10 +264,11 @@
       });
 
 
+      // Компонент інформаційної панелі
       AFRAME.registerComponent('info-panel', {
         schema: {
-            targetType: {type: 'string', default: 'star'},
-            maxDistance: {type: 'number', default: 5}
+            targetType: {type: 'string', default: 'star'}, // 'star' або 'planet'
+            maxDistance: {type: 'number', default: 5} // Максимальна відстань для визначення найближчого об'єкта
         },
         init: function() {
           this.nameText = this.el.querySelector('.info-panel-name');
@@ -264,15 +279,16 @@
           this.allObjects = document.querySelectorAll('[planet]');
           this.camera = document.querySelector('a-camera');
           this.prevNearestObject = null;
-          this.updateInterval = 500;
+          this.updateInterval = 500; // Оновлюємо кожні 500 мс
           this.lastUpdateTime = 0;
 
+          // Перевірка, чи всі елементи знайдені
           if (!this.nameText || !this.classificationText || !this.typeText || !this.camera || !this.massText) {
-              this.el.setAttribute('visible', 'false');
+              this.el.setAttribute('visible', 'false'); // Сховати панель, якщо щось не знайдено
               console.warn("Info panel elements not found. Panel hidden.");
           } else {
               this.el.setAttribute('visible', 'true');
-              this.updatePanel();
+              this.updatePanel(); // Перше оновлення
           }
         },
 
@@ -290,6 +306,7 @@
           let minDistance = Infinity;
           const cameraPosition = new THREE.Vector3().setFromMatrixPosition(this.camera.object3D.matrixWorld);
 
+          // Фільтруємо об'єкти за типом (зірка або планета)
           const filteredObjects = Array.from(this.allObjects).filter(obj => {
               const planetData = obj.getAttribute('planet');
               if (!planetData) return false;
@@ -297,7 +314,7 @@
           });
 
           filteredObjects.forEach(obj => {
-            if (!obj.object3D) return;
+            if (!obj.object3D) return; // Перевірка на наявність object3D
 
             const objPosition = new THREE.Vector3().setFromMatrixPosition(obj.object3D.matrixWorld);
             const distance = cameraPosition.distanceTo(objPosition);
@@ -309,6 +326,7 @@
           });
 
           if (nearestObject) {
+            // Оновлюємо інформацію лише якщо найближчий об'єкт змінився
             if (nearestObject !== this.prevNearestObject) {
                 const planetData = nearestObject.getAttribute('planet');
                 if (planetData) {
@@ -318,11 +336,14 @@
 
                     if (planetData.type === 'star') {
                         typeValue = "Тип: Зірка";
-                        if (planetData.spectralType) {
+                        if (planetData.spectralType) { // Використовуємо spectralType з компонента planet
                             classificationValue = `Спектральний тип: ${planetData.spectralType}`;
+                        } else {
+                            classificationValue = `Спектральний тип: Невідомий`;
                         }
                     } else {
                         typeValue = "Тип: Планета"; 
+                        // Для планет можна додати інші класифікації, якщо потрібно
                     }
 
                     this.nameText.setAttribute('value', `Назва: ${planetData.name}`);
@@ -331,6 +352,7 @@
                     this.massText.setAttribute('value', massValue);
 
                 } else {
+                    // Якщо об'єкт не має компонента planet (наприклад, просто a-sphere без нього)
                     this.nameText.setAttribute('value', 'Назва: ---');
                     this.classificationText.setAttribute('value', 'Деталі: ---');
                     this.typeText.setAttribute('value', 'Тип: ---');
@@ -339,6 +361,7 @@
                 this.prevNearestObject = nearestObject;
             }
           } else {
+              // Якщо немає найближчого об'єкта
               this.nameText.setAttribute('value', 'Назва: ---');
               this.classificationText.setAttribute('value', 'Деталі: ---');
               this.typeText.setAttribute('value', 'Тип: ---');
@@ -360,6 +383,7 @@
         starsContainer.setAttribute('id', 'background-stars');
         scene.appendChild(starsContainer);
 
+        // Спектральні типи та їх розподіл (приблизний)
         const spectralTypes = ['O', 'B', 'A', 'F', 'G', 'K', 'M'];
         const spectralTypeDistribution = {
             'O': 0.000003, 'B': 0.13, 'A': 0.6, 'F': 3, 'G': 7.6, 'K': 12, 'M': 76
@@ -374,21 +398,21 @@
                     return type;
                 }
             }
-            return 'M';
+            return 'M'; // Запасний варіант, якщо щось піде не так
         }
 
 
         for (let i = 0; i < numStars; i++) {
           try {
             const star = document.createElement('a-sphere');
-            const starId = `star-${generateUUID()}`;
+            const starId = `star-${generateUUID()}`; // Використовуємо унікальний ID
             star.setAttribute('id', starId);
 
             const currentStarSize = starBaseSize * (0.5 + Math.random());
             
             star.setAttribute('radius', currentStarSize);
-            star.setAttribute('color', '#FFFFFF');
-            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 1.0;'); 
+            star.setAttribute('color', '#FFFFFF'); // Початковий колір
+            star.setAttribute('material', 'shader: standard; emissive: #FFFFFF; emissiveIntensity: 1.0;'); // Ефект сяйва
 
             let x, y, z;
             let distance;
@@ -401,15 +425,16 @@
 
             star.setAttribute('position', `${x} ${y} ${z}`);
             
+            // Застосовуємо ефект еволюції, якщо потрібно
             if (evolveStars) {
               star.setAttribute('star-evolution-effect', {
-                  evolutionSpeed: 0.0005 * (0.5 + Math.random()),
+                  evolutionSpeed: 0.0005 * (0.5 + Math.random()), // Різна швидкість еволюції
                   originalRadius: currentStarSize
               });
             }
 
-            const starSpectralType = getRandomSpectralType();
-            star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: ${1.989e30 * (0.5 + Math.random() * 2)}; dist: ${distance}; spectralType: ${starSpectralType}`); 
+            const starSpectralType = getRandomSpectralType(); // Генеруємо випадковий спектральний тип
+            star.setAttribute('planet', `name: Зірка ${i+1}; type: star; mass: ${1.989e30 * (0.5 + Math.random() * 2)}; dist: ${distance}; spectralType: ${starSpectralType}`); // Додаємо spectralType
 
             starsContainer.appendChild(star);
 
