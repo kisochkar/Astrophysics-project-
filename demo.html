@@ -187,7 +187,8 @@
 
         for (let i = 0; i < numStars; i++) {
           const star = document.createElement('a-sphere');
-          const currentStarSize = starBaseSize * (0.5 + Math.random());
+          // Зменшуємо базовий розмір зірок для діагностики
+          const currentStarSize = starBaseSize * (0.5 + Math.random()) * 0.1; // Додано * 0.1
           star.setAttribute('radius', currentStarSize);
           star.setAttribute('color', '#FFFFFF');
           star.setAttribute('material', 'shader: flat; emissive: #FFFFFF; emissiveIntensity: 0.5;');
@@ -218,8 +219,9 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            // Змінено evolveStars на false для діагностики білого об'єкта
-            generateBackgroundStars(500, 200, 50, 0.01, false); 
+            // Еволюція зірок вимкнена (false)
+            // minDistance збільшено до 70, starBaseSize ефективно зменшено (x0.1)
+            generateBackgroundStars(500, 200, 70, 0.01, false); 
           });
         }
       });
