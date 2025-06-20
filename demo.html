@@ -187,8 +187,7 @@
 
         for (let i = 0; i < numStars; i++) {
           const star = document.createElement('a-sphere');
-          // Зменшуємо базовий розмір зірок для діагностики
-          const currentStarSize = starBaseSize * (0.5 + Math.random()) * 0.1; // Додано * 0.1
+          const currentStarSize = starBaseSize * (0.5 + Math.random()); // Повернуто до оригінального множника
           star.setAttribute('radius', currentStarSize);
           star.setAttribute('color', '#FFFFFF');
           star.setAttribute('material', 'shader: flat; emissive: #FFFFFF; emissiveIntensity: 0.5;');
@@ -219,9 +218,8 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            // Еволюція зірок вимкнена (false)
-            // minDistance збільшено до 70, starBaseSize ефективно зменшено (x0.1)
-            generateBackgroundStars(500, 200, 70, 0.01, false); 
+            // Повністю вимкнено генерацію фонових зірок для діагностики
+            // generateBackgroundStars(500, 200, 70, 0.01, false); 
           });
         }
       });
