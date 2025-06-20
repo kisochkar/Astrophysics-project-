@@ -15,7 +15,7 @@
           z-index: 9999;
           padding: 15px 30px;
           background: #667eea;
-          color: black;
+          color: white;
           text-decoration: none;
           border-radius: 25px;
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -123,28 +123,27 @@
         }
       });
 
-      // Новий компонент для еволюції фонових зірок
       AFRAME.registerComponent('star-evolution-effect', {
         schema: {
           evolutionSpeed: {type: 'number', default: 0.0001},
           initialPhase: {type: 'string', default: 'mainSequence'},
-          originalRadius: {type: 'number', default: 0.01} // Щоб зірка поверталася до свого початкового розміру
+          originalRadius: {type: 'number', default: 0.01}
         },
 
         init: function() {
-          this.evolutionTime = Math.random() * 2000; // Починаємо з випадкової фази
+          this.evolutionTime = Math.random() * 2000;
           this.star = this.el;
-          this.initialRadius = this.data.originalRadius; // Зберігаємо початковий радіус
+          this.initialRadius = this.data.originalRadius;
 
           this.evolutionPhases = [
             { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
             { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
             { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
-            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' } // Додав фазу для ефекту
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' }
           ];
 
           this.currentPhaseIndex = 0;
-          this.currentPhaseStartTime = this.evolutionTime; // Початковий час з урахуванням випадкового старту
+          this.currentPhaseStartTime = this.evolutionTime;
           this.updateStarVisuals(this.evolutionPhases[0]);
         },
 
@@ -159,7 +158,7 @@
 
             if (this.currentPhaseIndex >= this.evolutionPhases.length) {
               this.currentPhaseIndex = 0;
-              this.evolutionTime = 0; // Скидаємо час для нового циклу еволюції
+              this.evolutionTime = 0;
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
@@ -204,10 +203,9 @@
 
           star.setAttribute('position', `${x} ${y} ${z}`);
           
-          // Додаємо компонент еволюції до зірок, якщо потрібно
           if (evolveStars) {
             star.setAttribute('star-evolution-effect', {
-                evolutionSpeed: 0.0001 * (0.5 + Math.random()), // Різна швидкість еволюції для кожної зірки
+                evolutionSpeed: 0.0001 * (0.5 + Math.random()),
                 originalRadius: currentStarSize
             });
           }
@@ -220,7 +218,7 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            generateBackgroundStars(500, 200, 50, 0.01, true); // Генеруємо 500 зірок з еволюцією
+            generateBackgroundStars(500, 200, 50, 0.01, true);
           });
         }
       });
