@@ -155,6 +155,7 @@
             align: 'center',
             wrapCount: 20
           });
+          // Position relative to the star, might need adjustment depending on star scale
           this.spectralText.setAttribute('position', '0 0.7 0');
           this.el.appendChild(this.spectralText);
         },
@@ -180,9 +181,14 @@
         },
 
         updateStarVisuals: function(phase) {
-          this.star.setAttribute('radius', phase.scale * 0.5);
-
-          this.star.setAttribute('material', `color: ${phase.color}; emissive: ${phase.color}; emissiveIntensity: 1;`);
+          // Now scaling the GLTF model
+          this.star.setAttribute('scale', `${phase.scale} ${phase.scale} ${phase.scale}`);
+          
+          // Change the color of the directional light to simulate star color
+          const light = document.querySelector('a-light[type="directional"]');
+          if (light) {
+            light.setAttribute('color', phase.color);
+          }
           
           this.spectralText.setAttribute('text', 'value', `Spectral Type: ${phase.spectralType}`);
         }
@@ -233,6 +239,7 @@
       <a-camera position="0 0 5" look-controls wasd-controls far="100"></a-camera>
 
       <a-assets>
+        <a-asset-item id="sun-model" src="./assets/models/sun.glb"></a-asset-item>
         <a-asset-item id="mercury-model" src="./assets/models/mercury.glb"></a-asset-item>
         <a-asset-item id="venus-model" src="./assets/models/venus.glb"></a-asset-item>
         <a-asset-item id="earth-model" src="./assets/models/earth.glb"></a-asset-item>
@@ -246,11 +253,11 @@
 
       <a-entity id="solar-system-container" scale="2 2 2" position="0 0 0">
 
-        <a-sphere radius="0.5"
+        <a-entity gltf-model="#sun-model"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  material="color: #FFFACD; emissive: #FFFACD; emissiveIntensity: 1;"
+                  scale="0.5 0.5 0.5"
                   star-evolution="evolutionSpeed: 0.0001;">
-        </a-sphere>
+        </a-entity>
 
         <a-entity gltf-model="#mercury-model"
                   planet="dist: 57.910e9; mass: 3.285e23; T: 88; name: Mercury"
