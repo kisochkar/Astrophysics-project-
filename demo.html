@@ -123,41 +123,29 @@
         }
       });
 
-      AFRAME.registerComponent('star-evolution', {
+      // Новий компонент для еволюції фонових зірок
+      AFRAME.registerComponent('star-evolution-effect', {
         schema: {
           evolutionSpeed: {type: 'number', default: 0.0001},
           initialPhase: {type: 'string', default: 'mainSequence'},
+          originalRadius: {type: 'number', default: 0.01} // Щоб зірка поверталася до свого початкового розміру
         },
 
         init: function() {
-          this.evolutionTime = 0;
+          this.evolutionTime = Math.random() * 2000; // Починаємо з випадкової фази
           this.star = this.el;
+          this.initialRadius = this.data.originalRadius; // Зберігаємо початковий радіус
 
           this.evolutionPhases = [
-            { name: 'mainSequence', duration: 1000, color: '#FFFACD', scale: 0.5, spectralType: 'G2V' },
-            { name: 'subGiant', duration: 200, color: '#FFD700', scale: 0.6, spectralType: 'G5III' },
-            { name: 'redGiant', duration: 500, color: '#FF4500', scale: 2.0, spectralType: 'M0III' },
-            { name: 'heliumFlash', duration: 50, color: '#FFD700', scale: 1.5, spectralType: 'K0III' },
-            { name: 'horizontalBranch', duration: 300, color: '#FFA07A', scale: 0.8, spectralType: 'A0V' },
-            { name: 'AGB', duration: 400, color: '#8B0000', scale: 3.0, spectralType: 'M5III' },
-            { name: 'planetaryNebula', duration: 50, color: '#87CEEB', scale: 0.1, spectralType: 'O' },
-            { name: 'whiteDwarf', duration: 1, color: '#ADD8E6', scale: 0.01, spectralType: 'DA' }
+            { name: 'mainSequence', duration: 1000, color: '#FFFFFF', scaleFactor: 1.0, spectralType: 'G2V' },
+            { name: 'redGiant', duration: 500, color: '#FF4500', scaleFactor: 1.5, spectralType: 'M0III' },
+            { name: 'whiteDwarf', duration: 700, color: '#ADD8E6', scaleFactor: 0.5, spectralType: 'DA' },
+            { name: 'supernova', duration: 50, color: '#FFFF00', scaleFactor: 2.0, spectralType: 'II' } // Додав фазу для ефекту
           ];
 
           this.currentPhaseIndex = 0;
-          this.currentPhaseStartTime = 0;
+          this.currentPhaseStartTime = this.evolutionTime; // Початковий час з урахуванням випадкового старту
           this.updateStarVisuals(this.evolutionPhases[0]);
-
-          this.spectralText = document.createElement('a-entity');
-          this.spectralText.setAttribute('text', {
-            value: `Spectral Type: ${this.evolutionPhases[0].spectralType}`,
-            color: 'white',
-            align: 'center',
-            wrapCount: 20
-          });
-          // Position relative to the star, might need adjustment depending on star scale
-          this.spectralText.setAttribute('position', '0 0.7 0');
-          this.el.appendChild(this.spectralText);
         },
 
         tick: function(time, deltaTime) {
@@ -171,7 +159,7 @@
 
             if (this.currentPhaseIndex >= this.evolutionPhases.length) {
               this.currentPhaseIndex = 0;
-              this.evolutionTime = 0;
+              this.evolutionTime = 0; // Скидаємо час для нового циклу еволюції
               this.currentPhaseStartTime = 0;
             }
             currentPhase = this.evolutionPhases[this.currentPhaseIndex];
@@ -181,20 +169,13 @@
         },
 
         updateStarVisuals: function(phase) {
-          // Now scaling the GLTF model
-          this.star.setAttribute('scale', `${phase.scale} ${phase.scale} ${phase.scale}`);
-          
-          // Change the color of the directional light to simulate star color
-          const light = document.querySelector('a-light[type="directional"]');
-          if (light) {
-            light.setAttribute('color', phase.color);
-          }
-          
-          this.spectralText.setAttribute('text', 'value', `Spectral Type: ${phase.spectralType}`);
+          this.star.setAttribute('radius', this.initialRadius * phase.scaleFactor);
+          this.star.setAttribute('material', `shader: flat; emissive: ${phase.color}; emissiveIntensity: 0.8;`);
         }
       });
 
-      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starSize = 0.01) {
+
+      function generateBackgroundStars(numStars = 500, maxDistance = 200, minDistance = 50, starBaseSize = 0.01, evolveStars = true) {
         const scene = document.querySelector('a-scene');
         if (!scene) {
           console.error('A-Frame scene not found.');
@@ -207,7 +188,8 @@
 
         for (let i = 0; i < numStars; i++) {
           const star = document.createElement('a-sphere');
-          star.setAttribute('radius', starSize * (0.5 + Math.random()));
+          const currentStarSize = starBaseSize * (0.5 + Math.random());
+          star.setAttribute('radius', currentStarSize);
           star.setAttribute('color', '#FFFFFF');
           star.setAttribute('material', 'shader: flat; emissive: #FFFFFF; emissiveIntensity: 0.5;');
 
@@ -221,6 +203,15 @@
           } while (distance < minDistance || distance > maxDistance);
 
           star.setAttribute('position', `${x} ${y} ${z}`);
+          
+          // Додаємо компонент еволюції до зірок, якщо потрібно
+          if (evolveStars) {
+            star.setAttribute('star-evolution-effect', {
+                evolutionSpeed: 0.0001 * (0.5 + Math.random()), // Різна швидкість еволюції для кожної зірки
+                originalRadius: currentStarSize
+            });
+          }
+
           starsContainer.appendChild(star);
         }
       }
@@ -229,7 +220,7 @@
         const scene = document.querySelector('a-scene');
         if (scene) {
           scene.addEventListener('loaded', function() {
-            generateBackgroundStars();
+            generateBackgroundStars(500, 200, 50, 0.01, true); // Генеруємо 500 зірок з еволюцією
           });
         }
       });
@@ -255,8 +246,7 @@
 
         <a-entity gltf-model="#sun-model"
                   planet="dist: 0; mass: 1.989e30; T: 0; name: Sun"
-                  scale="0.5 0.5 0.5"
-                  star-evolution="evolutionSpeed: 0.0001;">
+                  scale="0.5 0.5 0.5">
         </a-entity>
 
         <a-entity gltf-model="#mercury-model"
